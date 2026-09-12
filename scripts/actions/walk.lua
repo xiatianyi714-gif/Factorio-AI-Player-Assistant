@@ -73,7 +73,7 @@ end
 
 -- (Re)initialize a walker. `state` must be a plain table stored on the task;
 -- all fields are plain data. The first step() issues the pathfinder request.
-function M.begin(state, c, target, arrive_within)
+function M.begin(state, c, target, arrive_within, strict_path)
   -- Walking tasks take over from driving: hop out first.
   pcall(function()
     if c.driving then c.driving = false end
@@ -83,6 +83,7 @@ function M.begin(state, c, target, arrive_within)
   end
   state.target = { x = target.x, y = target.y }
   state.arrive_within = math.max(tonumber(arrive_within) or 1.0, 0.1)
+  state.strict_path = strict_path == true
   state.phase = "request"
   state.retries = 0
   state.repathed = false
@@ -108,12 +109,20 @@ function M.step(state, c, task_id)
       if result.try_again_later then
         state.retries = state.retries + 1
         if state.retries > MAX_RETRIES then
+          if state.strict_path then
+            c.walking_state = { walking = false }
+            return { failed = "pathfinder remained busy; strict movement will not walk through obstacles" }
+          end
           state.phase = "straight" -- pathfinder too busy; just head there
         else
           state.phase = "retry_wait"
           state.retry_at = game.tick + RETRY_DELAY_TICKS
         end
       elseif not result.path or #result.path == 0 then
+        if state.strict_path then
+          c.walking_state = { walking = false }
+          return { failed = "no safe path found; strict movement will not walk through obstacles" }
+        end
         state.phase = "straight" -- no path found: straight-line fallback
       else
         state.path = result.path
@@ -122,6 +131,10 @@ function M.step(state, c, task_id)
       end
     elseif game.tick - state.request_tick > PATH_WAIT_TICKS then
       storage.path_requests[state.request_id] = nil
+      if state.strict_path then
+        c.walking_state = { walking = false }
+        return { failed = "path request timed out; strict movement will not walk through obstacles" }
+      end
       state.phase = "straight"
     else
       c.walking_state = { walking = false }
@@ -145,8 +158,14 @@ function M.step(state, c, task_id)
       state.waypoint = state.waypoint + 1
     end
     if state.waypoint > #path then
-      state.phase = "straight" -- path spent; close the last stretch directly
-      goal = state.target
+      if state.strict_path then
+        request_path(state, c, task_id)
+        c.walking_state = { walking = false }
+        return nil
+      else
+        state.phase = "straight" -- path spent; close the last stretch directly
+        goal = state.target
+      end
     else
       goal = path[state.waypoint]
     end

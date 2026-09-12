@@ -71,7 +71,7 @@ function M.start(task)
     end
   end
   task._patrol = { points = points, index = 1, walk = {}, legs = 0 }
-  walk.begin(task._patrol.walk, c, points[1], 1.5)
+  walk.begin(task._patrol.walk, c, points[1], 1.5, true)
 end
 
 function M.tick(task)
@@ -82,7 +82,7 @@ function M.tick(task)
     task._resume_after_combat = nil
     p.enemy, p.combat_walk, p.arm_supply = nil, nil, nil
     p.walk = {}
-    walk.begin(p.walk, c, p.points[p.index], 1.5)
+    walk.begin(p.walk, c, p.points[p.index], 1.5, true)
   end
   local armed = equipment.auto_arm(c)
 
@@ -119,7 +119,7 @@ function M.tick(task)
     if p.resume_route_after_supply then
       p.resume_route_after_supply = nil
       p.walk = {}
-      walk.begin(p.walk, c, p.points[p.index], 1.5)
+      walk.begin(p.walk, c, p.points[p.index], 1.5, true)
     end
   end
 
@@ -166,7 +166,7 @@ function M.tick(task)
     p.was_fighting = nil
     p.combat_goal = nil
     p.walk = {}
-    walk.begin(p.walk, c, p.points[p.index], 1.5)
+    walk.begin(p.walk, c, p.points[p.index], 1.5, true)
   end
 
   local result = walk.step(p.walk, c, task.id)
@@ -178,12 +178,12 @@ function M.tick(task)
     end
     p.index = p.index % #p.points + 1
     p.walk = {}
-    walk.begin(p.walk, c, p.points[p.index], 1.5)
+    walk.begin(p.walk, c, p.points[p.index], 1.5, true)
   elseif type(result) == "table" then
     -- A blocked/stale path is not an arrival. Retry this exact route point so
     -- custom patrols always remain 1 -> 2 -> 3 -> ... in the saved order.
     p.walk = {}
-    walk.begin(p.walk, c, p.points[p.index], 1.5)
+    walk.begin(p.walk, c, p.points[p.index], 1.5, true)
   end
   return nil
 end

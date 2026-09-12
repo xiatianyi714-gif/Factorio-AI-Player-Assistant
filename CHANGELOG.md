@@ -1,5 +1,19 @@
 # 更新日志 / Changelog
 
+## 0.9.25
+
+### 中文
+
+- 巡逻移动启用严格寻路，不再在寻路超时、失败或路径提前结束时朝目标直线行走撞墙。
+- 路线暂时不可达时助手会停止并重新请求到同一个巡逻点的安全路径，不会跳点。
+- 普通采集、施工和战斗移动保持原有行为，避免扩大改动范围。
+
+### English
+
+- Patrol movement now uses strict pathfinding and never falls back to walking directly into walls after a timeout, failure or prematurely exhausted path.
+- When a waypoint is temporarily unreachable, the companion stops and requests a fresh safe path to the same point without skipping it.
+- Other mining, construction and combat movement retains its existing behavior to keep the change scoped.
+
 ## 0.9.24
 
 ### 中文
