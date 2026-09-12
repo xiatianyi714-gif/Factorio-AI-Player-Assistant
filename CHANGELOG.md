@@ -1,5 +1,19 @@
 # 更新日志 / Changelog
 
+## 0.9.20
+
+### 中文
+
+- 修复自定义巡逻把寻路失败误判为到达、从而跳过路线点的问题。
+- 巡逻战斗结束后重新规划到当前路线点的路径，不再错误推进路线序号。
+- 自定义及保存路线现在只在助手真实到达当前点后，才按 1→2→3 的顺序前往下一点。
+
+### English
+
+- Fixed custom patrols treating a failed path as arrival and skipping route points.
+- After patrol combat, companions rebuild a path to the current route point instead of advancing incorrectly.
+- Custom and saved routes now advance 1→2→3 only after actually reaching the current point.
+
 ## 0.9.19
 
 ### 中文

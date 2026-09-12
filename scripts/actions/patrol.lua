@@ -127,6 +127,7 @@ function M.tick(task)
   end
 
   if enemy and armed then
+    p.was_fighting = true
     local range = gun_range(c)
     local distance = math.sqrt(dist_sq(c.position, enemy.position))
     if distance > range - 1 then
@@ -154,14 +155,27 @@ function M.tick(task)
   end
 
   stop_shooting(c)
+  if p.was_fighting then
+    -- Combat movement invalidates the old route leg. Resume the same numbered
+    -- patrol point with a fresh path; never advance merely because combat ended.
+    p.was_fighting = nil
+    p.combat_goal = nil
+    p.walk = {}
+    walk.begin(p.walk, c, p.points[p.index], 1.5)
+  end
   local result = walk.step(p.walk, c, task.id)
-  if result == "arrived" or type(result) == "table" then
+  if result == "arrived" then
     p.legs = p.legs + 1
     if task.rounds and p.legs >= math.max(1, math.floor(task.rounds)) * #p.points then
       c.walking_state = { walking = false }
       return { status = "done", detail = "完成一轮空闲巡逻" }
     end
     p.index = p.index % #p.points + 1
+    p.walk = {}
+    walk.begin(p.walk, c, p.points[p.index], 1.5)
+  elseif type(result) == "table" then
+    -- A blocked/stale path is not an arrival. Retry this exact route point so
+    -- custom patrols always remain 1 -> 2 -> 3 -> ... in the saved order.
     p.walk = {}
     walk.begin(p.walk, c, p.points[p.index], 1.5)
   end
