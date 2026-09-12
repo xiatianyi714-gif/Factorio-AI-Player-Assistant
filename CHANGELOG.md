@@ -1,5 +1,19 @@
 # 更新日志 / Changelog
 
+## 0.13.1
+
+### 中文
+
+- 维修助手不再只按当前一台设备领取一个修理包，而会统计个人工作区内可负责设备的总损坏量，一次领取一批。
+- 单次最多领取 20 个，并继续受箱子库存和助手背包容量限制，避免搬空共享库存且不会生成物品。
+- 成批领取后会连续维修后续目标，显著减少在设备与修理包箱之间来回跑动。
+
+### English
+
+- Repair helpers now calculate a batch from the total eligible damage in their work area instead of collecting for only the current machine.
+- A collection trip is capped at 20 packs and remains limited by real chest stock and companion inventory capacity; no items are generated.
+- The carried batch is reused across subsequent repair targets, greatly reducing repeated chest trips.
+
 ## 0.13.0
 
 ### 中文

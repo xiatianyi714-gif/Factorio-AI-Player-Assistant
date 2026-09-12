@@ -15,6 +15,7 @@ local CHEST_RADIUS = 96
 local SCAN_INTERVAL_TICKS = 120
 local HEAL_PER_TICK = 3
 local HP_PER_REPAIR_PACK = 150
+local MAX_REPAIR_PACK_BATCH = 20
 
 local function T(zh, en)
   return storage.local_language == "en" and en or zh
@@ -56,6 +57,27 @@ local function find_repair_pack_chest(c, center)
     end
   end
   return best
+end
+
+-- Collect enough packs for a useful maintenance route instead of returning to
+-- a chest after every lightly damaged machine. The cap keeps each helper from
+-- monopolising a shared repair-pack stockpile, and inventory.insert remains
+-- the final capacity limit.
+local function repair_pack_batch_need(c, task, state)
+  local missing_health = 0
+  for _, entity in ipairs(c.surface.find_entities_filtered({
+    position = state.anchor,
+    radius = task.radius,
+    force = c.force,
+  })) do
+    if needs_repair(entity, c.force)
+        and reservations.available(entity, companion.context(), task.id) then
+      local hp, max = health_values(entity)
+      missing_health = missing_health + math.max(0, (max or 0) - (hp or 0))
+    end
+  end
+  return math.max(1, math.min(MAX_REPAIR_PACK_BATCH,
+    math.ceil(missing_health / HP_PER_REPAIR_PACK)))
 end
 
 function M.start(task)
@@ -103,8 +125,7 @@ function M.tick(task)
         if reached_box ~= "ok" then return nil end
         local inv = box.get_inventory(defines.inventory.chest)
         local available = inv and inv.get_item_count("repair-pack") or 0
-        local hp, max = health_values(target)
-        local packs_needed = math.max(1, math.ceil(math.max(0, (max or 0) - (hp or 0)) / HP_PER_REPAIR_PACK))
+        local packs_needed = repair_pack_batch_need(c, task, state)
         local moved = 0
         if available > 0 then
           moved = c.get_main_inventory().insert({
