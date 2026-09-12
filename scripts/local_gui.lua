@@ -906,9 +906,10 @@ function M.on_gui_click(event)
           type = "keep_repaired",
           center = { x = c.position.x, y = c.position.y },
           radius = 256,
+          max_empty_scans = 1,
         }
       end)
-      status(player, command_label(player) .. T(" 正在寻找并维修受损设备；没有修理包时会从设备附近己方箱子取", " are finding and repairing damaged machines; repair packs will be collected from nearby friendly chests"))
+      status(player, command_label(player) .. T(" 正在寻找并维修受损设备；全部修完后恢复待机", " are finding and repairing damaged machines, then returning to idle when all repairs are complete"))
     elseif name == PREFIX .. "follow" then
       order_all(player, function() return { type = "follow_player", player = player.name, distance = 3 } end)
       status(player, command_label(player) .. T(" 正在跟随你", " are following you"))

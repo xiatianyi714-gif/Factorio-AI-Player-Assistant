@@ -38,6 +38,9 @@ This enhanced edition continues development from the mod code in Agentic-Factori
 - 遭遇战只会临时挂起维修、补给、施工或巡逻；战斗结束后助手会从当前位置重新寻路并恢复原任务进度。
 - Encounters temporarily suspend repairs, supply, construction, or patrol work; after combat, companions re-path from their current position and resume the original task progress.
 
+- 维修包按当前设备实际损伤计算取用；手动维修清空目标后结束，助手恢复正常待机并继续自动关注新损坏。
+- Repair packs are collected according to the current machine's actual damage; manual repair ends when the area is clear, returning the companion to idle monitoring for new damage.
+
 - 跟随、原地镇守、巡逻、主动清理敌人和停止命令。
 - Follow, hold position, patrol, clear nearby enemies, and stop commands.
 

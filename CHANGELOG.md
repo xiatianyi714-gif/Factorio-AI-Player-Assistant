@@ -1,5 +1,16 @@
 # 更新日志 / Changelog
 
+## 0.9.18 — 按损伤取维修包 / Damage-Based Repair Pack Collection
+
+- 助手不再从箱子固定取最多 10 个维修包，而是根据当前受损设备缺失的生命值和每包实际维修量计算本次所需数量。
+- Companions no longer take a fixed batch of up to 10 repair packs. The amount is calculated from the current machine's missing health and the actual repair capacity used per pack.
+
+- 每修完一台设备后才为下一台重新计算，避免轻微损坏时占用过多维修包；仍不会凭空生成物品。
+- Requirements are recalculated for each machine after the previous repair is complete, preventing excessive pickup for minor damage; items are still never spawned.
+
+- 手动“主动维修”在确认附近没有受损设备后会结束并恢复正常待机，不再长期站在原地等待；新损坏仍会由待机高优先级维修自动处理。
+- Manual autonomous repair now ends and returns to normal idle behavior after confirming no damaged machines remain, instead of standing indefinitely; new damage is still handled by high-priority idle repair scheduling.
+
 ## 0.9.17 — 战后任务可靠恢复 / Reliable Post-Combat Task Resumption
 
 - 修复主动维修被遭遇战打断后，助手仍等待已经失效的旧寻路请求、杀敌后不返回维修的问题。

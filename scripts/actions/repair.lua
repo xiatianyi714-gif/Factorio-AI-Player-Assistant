@@ -97,9 +97,14 @@ function M.tick(task)
         if reached_box ~= "ok" then return nil end
         local inv = box.get_inventory(defines.inventory.chest)
         local available = inv and inv.get_item_count("repair-pack") or 0
+        local hp, max = health_values(target)
+        local packs_needed = math.max(1, math.ceil(math.max(0, (max or 0) - (hp or 0)) / HP_PER_REPAIR_PACK))
         local moved = 0
         if available > 0 then
-          moved = c.get_main_inventory().insert({ name = "repair-pack", count = math.min(available, 10) })
+          moved = c.get_main_inventory().insert({
+            name = "repair-pack",
+            count = math.min(available, packs_needed),
+          })
           if moved > 0 then inv.remove({ name = "repair-pack", count = moved }) end
         end
         state.supply = nil
