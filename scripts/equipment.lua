@@ -205,6 +205,61 @@ local AUTO_WEAPON_PAIRS = {
   { "flamethrower", "flamethrower-ammo" },
 }
 
+-- Find a same-force chest that can complete a usable gun/ammunition pair.
+-- The caller is responsible for physically walking into reach before taking.
+function M.find_armament_chest(c, radius)
+  local current = M.current_gun(c)
+  local main = c.get_main_inventory()
+  local best, best_distance
+  for _, box in ipairs(c.surface.find_entities_filtered({
+    position = c.position, radius = radius or 256, force = c.force,
+    type = { "container", "logistic-container" },
+  })) do
+    local inv = box.get_inventory(defines.inventory.chest)
+    if inv then
+      for _, pair in ipairs(AUTO_WEAPON_PAIRS) do
+        local gun, ammo = pair[1], pair[2]
+        local gun_available = current == gun or main.get_item_count(gun) > 0 or inv.get_item_count(gun) > 0
+        local ammo_available = main.get_item_count(ammo) > 0 or inv.get_item_count(ammo) > 0
+        local supplies_something = inv.get_item_count(gun) > 0 or inv.get_item_count(ammo) > 0
+        if (not current or current == gun) and gun_available and ammo_available and supplies_something then
+          local dx, dy = box.position.x - c.position.x, box.position.y - c.position.y
+          local distance = dx * dx + dy * dy
+          if not best_distance or distance < best_distance then best, best_distance = box, distance end
+          break
+        end
+      end
+    end
+  end
+  return best
+end
+
+function M.take_armament_from_chest(c, box)
+  if not (box and box.valid) then return false end
+  local inv = box.get_inventory(defines.inventory.chest)
+  if not inv then return false end
+  local current = M.current_gun(c)
+  local main = c.get_main_inventory()
+  for _, pair in ipairs(AUTO_WEAPON_PAIRS) do
+    local gun, ammo = pair[1], pair[2]
+    local gun_available = current == gun or main.get_item_count(gun) > 0 or inv.get_item_count(gun) > 0
+    local ammo_available = main.get_item_count(ammo) > 0 or inv.get_item_count(ammo) > 0
+    if (not current or current == gun) and gun_available and ammo_available then
+      if not current and main.get_item_count(gun) == 0 then
+        local moved = main.insert({ name = gun, count = math.min(1, inv.get_item_count(gun)) })
+        if moved > 0 then inv.remove({ name = gun, count = moved }) end
+      end
+      if main.get_item_count(ammo) == 0 then
+        local stack_size = prototypes.item[ammo] and prototypes.item[ammo].stack_size or 100
+        local moved = main.insert({ name = ammo, count = math.min(stack_size, inv.get_item_count(ammo)) })
+        if moved > 0 then inv.remove({ name = ammo, count = moved }) end
+      end
+      return M.auto_arm(c)
+    end
+  end
+  return false
+end
+
 local function take_from_reachable_chest(c, name, count)
   for _, box in ipairs(c.surface.find_entities_filtered({
     position = c.position,

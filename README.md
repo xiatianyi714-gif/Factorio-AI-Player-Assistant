@@ -32,6 +32,9 @@ This enhanced edition continues development from the mod code in Agentic-Factori
 - 可在地图上依次设置多个自定义巡逻点，向全部或单个助手下达循环巡逻路线；助手会沿途战斗并在战后恢复路线。
 - Define multiple ordered patrol points on the map and assign the looping route to all companions or an individual; companions fight along the way and resume the route afterward.
 
+- 自定义路线会按助手分别保存并可一键重新使用；巡逻中缺枪或弹药时，助手会从己方箱子取得兼容装备后继续路线。
+- Custom routes are saved per companion and can be restarted with one click; patrolling companions retrieve compatible guns or ammunition from friendly chests before resuming their route.
+
 - 跟随、原地镇守、巡逻、主动清理敌人和停止命令。
 - Follow, hold position, patrol, clear nearby enemies, and stop commands.
 

@@ -112,6 +112,7 @@ local function make_gui(player)
   move.add({ type = "button", name = PREFIX .. "patrol", caption = T("巡逻", "Patrol") })
   move.add({ type = "button", name = PREFIX .. "patrol_custom", caption = T("自定义巡逻", "Custom patrol") })
   move.add({ type = "button", name = PREFIX .. "patrol_finish", caption = T("完成巡逻路线", "Finish patrol route") })
+  move.add({ type = "button", name = PREFIX .. "patrol_saved", caption = T("使用保存路线", "Use saved route") })
   move.add({ type = "button", name = PREFIX .. "attack", caption = T("清理敌人", "Clear enemies") })
   move.add({ type = "button", name = PREFIX .. "stop", caption = T("停止命令", "Stop orders") })
   frame.add({ type = "label", caption = T("施工（材料取自助手背包）", "Construction (materials from companion inventories)") })
@@ -442,6 +443,8 @@ local function start_custom_patrol(player)
     if companion.get(name) then
       local points = {}
       for i, point in ipairs(pending.points) do points[i] = { x = point.x, y = point.y } end
+      local rec = companion.record(name)
+      if rec then rec.saved_patrol_route = points end
       order(player, { type = "patrol", points = points }, name)
       assigned = assigned + 1
     end
@@ -931,6 +934,20 @@ function M.on_gui_click(event)
       status(player, T("请按顺序框选巡逻点；设置至少两个点后点击“完成巡逻路线”，或在最后一点右键框选", "Select patrol points in order; after at least two points click Finish Patrol Route, or alt-select the final point"))
     elseif name == PREFIX .. "patrol_finish" then
       start_custom_patrol(player)
+    elseif name == PREFIX .. "patrol_saved" then
+      local assigned = 0
+      for _, who in ipairs(command_names(player)) do
+        local rec = companion.record(who)
+        if rec and rec.saved_patrol_route and #rec.saved_patrol_route >= 2 then
+          local points = {}
+          for i, point in ipairs(rec.saved_patrol_route) do points[i] = { x = point.x, y = point.y } end
+          order(player, { type = "patrol", points = points }, who)
+          assigned = assigned + 1
+        end
+      end
+      status(player, assigned > 0
+        and string.format(T("已让 %d 个助手使用保存的巡逻路线", "Started saved routes for %d companion(s)"), assigned)
+        or T("所选助手还没有保存的巡逻路线", "The selected companion(s) have no saved patrol route"))
     elseif name == PREFIX .. "attack" then
       local command_center = { x = player.position.x, y = player.position.y }
       order_all(player, function()

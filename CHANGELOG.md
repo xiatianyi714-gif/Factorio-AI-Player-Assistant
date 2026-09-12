@@ -1,5 +1,19 @@
 # 更新日志 / Changelog
 
+## 0.9.16 — 巡逻武器补给与路线保存 / Patrol Armament and Saved Routes
+
+- 巡逻助手没有可用枪械或弹药时，会搜索 256 格内的己方箱子，寻找成套枪械与兼容弹药或当前武器可用弹药，亲自取用、装备后继续原路线。
+- When a patrolling companion lacks a usable gun or ammunition, it searches friendly chests within 256 tiles for a complete compatible loadout or ammunition for its current weapon, physically retrieves and equips it, then resumes the same route.
+
+- 完成自定义巡逻路线时会自动保存到每个所选助手的存档记录，切换任务、保存游戏或死亡复活后仍然保留。
+- Finishing a custom patrol automatically saves it in each selected companion's persistent record, retaining it across task changes, game saves, and death/respawn.
+
+- 指令面板新增“使用保存路线”按钮，可随时让全部助手或单独助手重新执行各自保存的路线。
+- Added a “Use Saved Route” button to restart each selected companion's saved route at any time.
+
+- 枪械和弹药均来自真实背包或己方箱子，不会凭空生成。
+- Guns and ammunition always come from real inventories or friendly chests and are never spawned.
+
 ## 0.9.15 — 自定义巡逻路线 / Custom Patrol Routes
 
 - 指令面板新增“自定义巡逻”和“完成巡逻路线”按钮，可在地图上按顺序设置两个或更多巡逻点。

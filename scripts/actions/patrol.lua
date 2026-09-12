@@ -1,6 +1,7 @@
 local companion = require("scripts.companion")
 local equipment = require("scripts.equipment")
 local walk = require("scripts.actions.walk")
+local approach = require("scripts.actions.approach")
 
 local M = {}
 local ENEMY_TYPES = { "unit", "unit-spawner", "turret" }
@@ -73,6 +74,43 @@ function M.tick(task)
   if not c then return { status = "failed", detail = "助手已不存在" } end
   local p = task._patrol
   local armed = equipment.auto_arm(c)
+
+  -- Patrols remain useful when supplies exist elsewhere in the base: walk to
+  -- a friendly chest, take a real compatible gun/ammo pair, then resume the
+  -- exact route leg that was interrupted.
+  if not armed then
+    if not p.arm_retry_tick or game.tick >= p.arm_retry_tick then
+      if not (p.arm_supply and p.arm_supply.valid) then
+        p.arm_supply = equipment.find_armament_chest(c, 256)
+        task._approach = nil
+      end
+      if p.arm_supply then
+        local reached = approach.ensure(task, c, p.arm_supply.position, c.reach_distance)
+        if type(reached) == "table" then
+          p.arm_supply = nil
+          p.arm_retry_tick = game.tick + 300
+          task._approach = nil
+        elseif reached == "ok" then
+          if equipment.take_armament_from_chest(c, p.arm_supply) then
+            p.resume_route_after_supply = true
+          end
+          p.arm_supply = nil
+          p.arm_retry_tick = game.tick + 300
+          task._approach = nil
+        end
+        return nil
+      end
+      p.arm_retry_tick = game.tick + 300
+    end
+  else
+    p.arm_supply = nil
+    task._approach = nil
+    if p.resume_route_after_supply then
+      p.resume_route_after_supply = nil
+      p.walk = {}
+      walk.begin(p.walk, c, p.points[p.index], 1.5)
+    end
+  end
 
   local enemy = p.enemy
   if not (enemy and enemy.valid) then
