@@ -13,8 +13,8 @@ local ENEMY_TYPES = { "unit", "unit-spawner", "turret" }
 local AUTO_SMELT_RADIUS = 256
 local AUTO_SMELT_BATCH = 50
 local smelting_categories_by_item
-local WORK_ORDER = { "repair", "refuel", "turret", "smelt", "patrol", "mine" }
-local DEFAULT_PRIORITY = { repair = 1, refuel = 2, turret = 3, smelt = 4, patrol = 4, mine = 4 }
+local WORK_ORDER = { "repair", "refuel", "turret", "patrol", "smelt", "mine" }
+local DEFAULT_PRIORITY = { repair = 1, refuel = 2, turret = 3, patrol = 4, smelt = 5, mine = 6 }
 
 local function work_radius(name)
   local saved = storage.work_settings and storage.work_settings[name]
@@ -33,7 +33,7 @@ local function priority(name, work)
   local saved = storage.work_priorities and storage.work_priorities[name]
   local value = saved and saved[work]
   if value == nil then value = DEFAULT_PRIORITY[work] end
-  return math.max(0, math.min(4, math.floor(tonumber(value) or 0)))
+  return math.max(0, math.min(6, math.floor(tonumber(value) or 0)))
 end
 
 local function ordered_work(name)

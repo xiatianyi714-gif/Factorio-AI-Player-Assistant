@@ -1,5 +1,21 @@
 # 更新日志 / Changelog
 
+## 0.15.4
+
+### 中文
+
+- 工作优先级从四级扩展为六级，使六种自动工作可以拥有明确且互不冲突的默认顺序。
+- 普通及全能助手默认顺序改为：维修1、补燃料2、炮塔补弹3、保存路线巡逻4、生产投料5、采矿6（最低）。
+- 旧版未修改的全能助手设置会自动迁移到新顺序；玩家自定义设置和矿工职业的采矿主业不会被覆盖。
+- 同级任务仍会公平轮换，避免玩家主动设为相同优先级的工作互相永久饿死。
+
+### English
+
+- Expanded work priorities from four to six levels so all six automatic jobs can have an explicit default order.
+- Normal and Generalist defaults are now Repair 1, Refuel 2, Turret Ammo 3, Saved-Route Patrol 4, Production 5 and Mining 6 (lowest).
+- Unmodified legacy Generalist settings migrate automatically; custom settings and the Miner role's primary mining priority are preserved.
+- Jobs deliberately assigned the same priority still rotate fairly to prevent starvation.
+
 ## 0.15.3
 
 ### 中文

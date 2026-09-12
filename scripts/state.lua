@@ -69,6 +69,17 @@ function M.init()
     end
     storage.migrated_saved_patrol_0153 = true
   end
+  if not storage.migrated_six_priorities_0154 then
+    for _, p in pairs(storage.work_priorities) do
+      -- Migrate only the unchanged old Generalist tail. Custom roles and
+      -- deliberately chosen mining priorities remain untouched.
+      if p.repair == 1 and p.refuel == 2 and p.turret == 3
+          and p.patrol == 4 and p.smelt == 4 and p.mine == 4 then
+        p.smelt, p.mine = 5, 6
+      end
+    end
+    storage.migrated_six_priorities_0154 = true
+  end
 end
 
 return M

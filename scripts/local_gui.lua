@@ -493,9 +493,9 @@ local WORK_TYPES = {
   { key = "repair", zh = "维修", en = "Repair", default = 1 },
   { key = "refuel", zh = "补燃料", en = "Refuel", default = 2 },
   { key = "turret", zh = "炮塔补弹", en = "Turret ammo", default = 3 },
-  { key = "smelt", zh = "生产投料", en = "Production", default = 4 },
+  { key = "smelt", zh = "生产投料", en = "Production", default = 5 },
   { key = "patrol", zh = "巡逻", en = "Patrol", default = 4 },
-  { key = "mine", zh = "采矿", en = "Mining", default = 4 },
+  { key = "mine", zh = "采矿", en = "Mining", default = 6 },
 }
 
 local ROLE_PRIORITIES = {
@@ -503,7 +503,7 @@ local ROLE_PRIORITIES = {
   miner = { repair = 0, refuel = 0, turret = 0, smelt = 3, patrol = 0, mine = 1 },
   guard = { repair = 3, refuel = 0, turret = 2, smelt = 0, patrol = 1, mine = 0 },
   production = { repair = 0, refuel = 2, turret = 0, smelt = 1, patrol = 0, mine = 3 },
-  general = { repair = 1, refuel = 2, turret = 3, smelt = 4, patrol = 4, mine = 4 },
+  general = { repair = 1, refuel = 2, turret = 3, patrol = 4, smelt = 5, mine = 6 },
 }
 
 local ROLE_LABELS = {
@@ -645,12 +645,12 @@ local function open_priorities(player)
     caption = T("助手工作优先级", "Companion Work Priorities"), direction = "vertical",
   })
   frame.auto_center = true
-  frame.add({ type = "label", caption = T("1 最高，4 最低；关闭表示不主动执行。战斗自卫始终优先。", "1 is highest and 4 lowest; Off disables autonomous work. Self-defense always takes priority.") })
+  frame.add({ type = "label", caption = T("1 最高，6 最低；关闭表示不主动执行。战斗自卫始终优先。", "1 is highest and 6 lowest; Off disables autonomous work. Self-defense always takes priority.") })
   local grid = frame.add({ type = "table", column_count = #WORK_TYPES + 2 })
   grid.add({ type = "label", caption = T("助手", "Companion") })
   for _, work in ipairs(WORK_TYPES) do grid.add({ type = "label", caption = T(work.zh, work.en) }) end
   grid.add({ type = "label", caption = T("搜索半径", "Search radius") })
-  local items = { T("关闭", "Off"), "1", "2", "3", "4" }
+  local items = { T("关闭", "Off"), "1", "2", "3", "4", "5", "6" }
   for index, who in ipairs(names) do
     grid.add({ type = "label", caption = who })
     local saved = storage.work_priorities[who] or {}
