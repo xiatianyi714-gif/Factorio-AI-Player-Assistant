@@ -39,11 +39,13 @@ end
 
 -- Returns "ok" when the helper has the item, "missing" when no stocked chest
 -- exists in the construction area, and nil while walking/collecting.
-function M.ensure(task, c, item_name, wanted, center)
+function M.ensure(task, c, item_name, wanted, center, minimum)
   -- Work materials must be physically present in the main inventory. Using
   -- LuaControl.get_item_count here also sees equipped ammunition, which could
   -- make a supply task consume the magazine reserved for the companion.
-  if c.get_main_inventory().get_item_count(item_name) > 0 then
+  local have = c.get_main_inventory().get_item_count(item_name)
+  minimum = math.max(1, math.floor(tonumber(minimum) or 1))
+  if have >= minimum then
     task._material_supply = nil
     return "ok"
   end
@@ -73,7 +75,7 @@ function M.ensure(task, c, item_name, wanted, center)
 
   local inv = chest_inventory(supply.box)
   local available = inv and inv.get_item_count(item_name) or 0
-  local request = math.max(1, math.floor(tonumber(wanted) or 1))
+  local request = math.max(1, math.floor(tonumber(wanted) or 1) - have)
   local moved = 0
   if available > 0 then
     moved = c.get_main_inventory().insert({ name = item_name, count = math.min(available, request) })

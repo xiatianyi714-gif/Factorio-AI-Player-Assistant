@@ -3,6 +3,7 @@
 local companion = require("scripts.companion")
 local approach = require("scripts.actions.approach")
 local material_supply = require("scripts.actions.material_supply")
+local reservations = require("scripts.reservations")
 
 local M = {}
 
@@ -38,9 +39,10 @@ function M.start(task)
     error("production supply needs a target position")
   end
   task.count = math.max(1, math.floor(tonumber(task.count) or 1))
-  local missing = task.count - c.get_item_count(task.item)
+  local main = c.get_main_inventory()
+  local missing = task.count - main.get_item_count(task.item)
   if missing > 0 then take_from_chests(c, task.item, missing) end
-  if c.get_item_count(task.item) == 0 and not task.find_in_chests then
+  if main.get_item_count(task.item) == 0 and not task.find_in_chests then
     error("助手背包和伸手可及的箱子里都没有 " .. task.item)
   end
 end
@@ -48,7 +50,8 @@ end
 function M.tick(task)
   local c = companion.get()
   if not c then return { status = "failed", detail = "the companion character is gone" } end
-  if c.get_item_count(task.item) == 0 and task.find_in_chests then
+  local main = c.get_main_inventory()
+  if main.get_item_count(task.item) == 0 and task.find_in_chests then
     local supplied = material_supply.ensure(task, c, task.item, task.count, task.target)
     if supplied == nil then return nil end
     if supplied == "missing" then
@@ -58,9 +61,13 @@ function M.tick(task)
   local reached = approach.ensure(task, c, task.target, c.reach_distance)
   if type(reached) == "table" then return reached end
   if reached ~= "ok" then return nil end
-  local target = approach.find_entity_near(c, task.target, 1.0)
+  local target = task.target_entity
+  if not (target and target.valid) then target = approach.find_entity_near(c, task.target, 1.0) end
   if not target then return { status = "failed", detail = "指定的生产设备或容器已不存在" } end
-  local available = math.min(task.count, c.get_item_count(task.item))
+  if task.reservation_key and not reservations.claim_key(task.reservation_key, companion.context(), task.id) then
+    return { status = "done", detail = "另一名助手已接手该生产设备" }
+  end
+  local available = math.min(task.count, main.get_item_count(task.item))
   local inserted = 0
   if available > 0 then
     pcall(function() inserted = target.insert({ name = task.item, count = available }) end)
@@ -68,7 +75,7 @@ function M.tick(task)
   if inserted <= 0 then
     return { status = "failed", detail = target.name .. " 不接受 " .. task.item .. "，或其库存已满" }
   end
-  c.remove_item({ name = task.item, count = inserted })
+  main.remove({ name = task.item, count = inserted })
   return {
     status = "done",
     detail = string.format("向 %s 投入了 %d 个 %s", target.name, inserted, task.item),

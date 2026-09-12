@@ -1,6 +1,6 @@
 # 异星工厂 AI 玩家助手 / Factorio AI Player Assistant
 
-> 当前版本 / Current version: 0.18.1 — 玩家驾驶时，乘客助手会优先操作载具自带武器。
+> 当前版本 / Current version: 0.19.0 — 新增按物品配送和每台生产设备独立的自动投料清单。
 
 一个完全在 Factorio 2.0 游戏内运行的多助手模组，不需要外部 AI、API、Codex 或 Token。助手像真实角色一样移动、采矿、搬运、建造和战斗，所有物品都来自实际背包、箱子或采集行为。
 
@@ -87,6 +87,12 @@ This enhanced edition continues development from the mod code in Agentic-Factori
 
 - 不同成品可映射到不同箱子，助手会记住“成品 → 箱子”的分类规则。
 - Different products can be mapped to different chests, and companions remember each product-to-chest sorting rule.
+
+- 常用页提供原版物品选择列表和数量输入框；助手会先从自己背包取物，不足时走到己方箱子领取，再追上玩家并亲手交付。选择“全部助手”时只派出一名，避免重复送来十份。
+- The Orders page provides Factorio's native item picker and an amount field. A helper uses carried stock first, visits friendly chests for the remainder, catches the player and physically hands it over. Selecting All companions dispatches only one helper to prevent duplicate deliveries.
+
+- 打开熔炉、组装机、研究所或火箭发射井时，原版设备窗口右侧会显示该设备专属的“助手自动投料清单”；可登记多种物品及各自目标数量。规则随存档保存，待机助手按自己的生产投料优先级持续补充真实物资。
+- Opening a furnace, assembling machine, lab or rocket silo shows that machine's own Companion Input List beside the native GUI. Multiple item targets can be saved per machine; idle helpers service them through their production priority using only real supplies.
 
 - 自动检查燃料目标数量，依次给多个设备补充；优先使用助手背包或己方箱子中的煤炭，没有可用煤炭时才使用其他兼容燃料，全部缺少时会寻找煤矿并实际开采。
 - 从箱子取燃料时会汇总个人搜索范围内的兼容设备需求，一次尽量带够整批燃料后连续补充，避免每补一台就返回箱子。

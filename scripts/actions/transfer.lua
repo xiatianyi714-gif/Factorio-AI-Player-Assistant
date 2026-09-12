@@ -329,4 +329,34 @@ function M.deliver.tick(task)
   }
 end
 
+-- Obtain a requested item from real companion/chest inventory, then reuse the
+-- normal moving-player delivery path to hand it to the requesting player.
+local material_supply = require("scripts.actions.material_supply")
+M.fetch_deliver = {}
+
+function M.fetch_deliver.start(task)
+  companion.require_companion()
+  task._items = validate_items(task.items, "fetch_deliver")
+  if #task._items ~= 1 then error("物资配送一次请选择一种物品") end
+  task._dl = {}
+end
+
+function M.fetch_deliver.tick(task)
+  local c = companion.get()
+  if not c then return gone() end
+  local entry = task._items[1]
+  local main = c.get_main_inventory()
+  if main.get_item_count(entry.name) < entry.count then
+    local supplied = material_supply.ensure(task, c, entry.name, entry.count, c.position, entry.count)
+    if supplied == nil then return nil end
+    if supplied == "missing" and main.get_item_count(entry.name) == 0 then
+      return { status = "failed", detail = "助手和附近己方箱子里都没有 " .. entry.name }
+    end
+    if supplied == "missing" then
+      task.items[entry.name] = main.get_item_count(entry.name)
+    end
+  end
+  return M.deliver.tick(task)
+end
+
 return M

@@ -33,6 +33,7 @@ local runners = {
   insert = transfer.insert,
   extract = transfer.extract,
   deliver = transfer.deliver,
+  fetch_deliver = transfer.fetch_deliver,
   keep_fueled = refuel,
   keep_repaired = repair,
   drive_to = drive,

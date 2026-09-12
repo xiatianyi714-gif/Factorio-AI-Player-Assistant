@@ -1,5 +1,25 @@
 # 更新日志 / Changelog
 
+## 0.19.0
+
+### 中文
+
+- 常用页新增“物资配送”：使用原版物品列表选择一种物资并设置数量，指定助手会从自己背包或搜索范围内的己方箱子取得后送到玩家手中。
+- 助手会追踪移动中的玩家，在正常接近距离内把物品放入玩家背包；背包已满或库存不足时保留未交付部分，不复制物资。
+- 熔炉、组装机、研究所和火箭发射井的原版窗口右侧新增设备专属“助手自动投料清单”。
+- 每台设备可以保存多个“物品 → 目标库存数量”规则，并可随时更新或删除；配置随存档永久保存。
+- 待机助手会在“生产投料”工作优先级中先处理设备清单，亲自从背包或己方箱子取料并送到对应设备。
+- 多名助手使用目标预约避免重复服务同一设备；无库存、设备已满、设备被拆除或物品不兼容时会安全跳过。
+
+### English
+
+- Added Item Delivery to Orders: choose an item with Factorio's native picker and an amount, then a selected helper obtains it from carried stock or friendly chests and brings it to the player.
+- The helper tracks a moving player and transfers at normal proximity. Inventory shortages and a full player inventory keep undelivered items without duplication.
+- Furnaces, assembling machines, labs and rocket silos now show a per-machine Companion Input List beside their native GUI.
+- Each machine can persist multiple item-to-target-stock rules that can be updated or removed at any time.
+- Idle helpers service configured machine rules first within their Production Input work priority, physically collecting and delivering real supplies.
+- Target reservations prevent duplicate servicing; missing stock, full or removed machines and incompatible items are skipped safely.
+
 ## 0.18.1
 
 ### 中文

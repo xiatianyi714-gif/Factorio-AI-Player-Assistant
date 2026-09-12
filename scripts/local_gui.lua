@@ -3,6 +3,7 @@ local tasks = require("scripts.tasks")
 local equipment = require("scripts.equipment")
 local blueprint = require("scripts.blueprint")
 local chatter = require("scripts.chatter")
+local machine_supply = require("scripts.machine_supply")
 
 local M = {}
 local PREFIX = "agentic_local_"
@@ -120,6 +121,12 @@ local function make_gui(player)
   quick.add({ type = "button", name = PREFIX .. "autonomy_pause",
     caption = storage.autonomy_paused and T("恢复自动工作", "Resume automatic work")
       or T("暂停自动工作", "Pause automatic work") })
+  common.add({ type = "label", caption = T("物资配送（从助手或己方箱子取出后送给你）", "Item delivery (from helper or friendly chests)") })
+  local delivery = common.add({ type = "flow", name = PREFIX .. "delivery_controls", direction = "horizontal" })
+  delivery.add({ type = "choose-elem-button", name = PREFIX .. "delivery_item", elem_type = "item" })
+  delivery.add({ type = "textfield", name = PREFIX .. "delivery_count", text = "50",
+    numeric = true, allow_decimal = false, allow_negative = false })
+  delivery.add({ type = "button", name = PREFIX .. "delivery", caption = T("送给我", "Deliver") })
 
   local work = frame.add({ type = "flow", name = PREFIX .. "work_section", direction = "vertical" })
   work.visible = false
@@ -178,6 +185,57 @@ local function make_gui(player)
   live_actions.add({ type = "button", name = PREFIX .. "locate", caption = T("定位所选助手", "Locate selected") })
   live_actions.add({ type = "button", name = PREFIX .. "stop_selected", caption = T("停止所选助手", "Stop selected") })
   frame.add({ type = "label", name = PREFIX .. "status", caption = T("就绪", "Ready") })
+end
+
+local MACHINE_PANELS = {
+  { suffix = "furnace", gui = defines.relative_gui_type.furnace_gui },
+  { suffix = "assembler", gui = defines.relative_gui_type.assembling_machine_gui },
+  { suffix = "lab", gui = defines.relative_gui_type.lab_gui },
+  { suffix = "silo", gui = defines.relative_gui_type.rocket_silo_gui },
+}
+
+local function refresh_machine_panels(player)
+  local state = storage.local_gui and storage.local_gui[player.index]
+  local entity = state and state.machine_entity
+  local configured = machine_supply.supported(entity) and machine_supply.list(entity) or {}
+  for _, spec in ipairs(MACHINE_PANELS) do
+    local frame = player.gui.relative[PREFIX .. "machine_panel_" .. spec.suffix]
+    local list = frame and frame[PREFIX .. "machine_rule_list"]
+    if list and list.valid then
+      list.clear()
+      for _, rule in ipairs(configured) do
+        local row = list.add({ type = "flow", direction = "horizontal" })
+        row.add({ type = "label", caption = { "", prototypes.item[rule.item].localised_name,
+          T("：目标 ", ": target "), rule.target } })
+        row.add({ type = "button", name = PREFIX .. "machine_remove", caption = T("删除", "Remove"),
+          tags = { item = rule.item } })
+      end
+      if #configured == 0 then
+        list.add({ type = "label", caption = T("尚未设置投料项目", "No input rules configured") })
+      end
+    end
+  end
+end
+
+local function make_machine_panels(player)
+  for _, spec in ipairs(MACHINE_PANELS) do
+    local old = player.gui.relative[PREFIX .. "machine_panel_" .. spec.suffix]
+    if old and old.valid then old.destroy() end
+    local frame = player.gui.relative.add({
+      type = "frame", name = PREFIX .. "machine_panel_" .. spec.suffix,
+      caption = T("助手自动投料清单", "Companion input list"), direction = "vertical",
+      anchor = { gui = spec.gui, position = defines.relative_gui_position.right },
+    })
+    if frame then
+      frame.add({ type = "label", caption = T("选择物品和设备内目标数量", "Choose an item and its target amount") })
+      local controls = frame.add({ type = "flow", name = PREFIX .. "machine_controls", direction = "horizontal" })
+      controls.add({ type = "choose-elem-button", name = PREFIX .. "machine_item", elem_type = "item" })
+      controls.add({ type = "textfield", name = PREFIX .. "machine_count", text = "50",
+        numeric = true, allow_decimal = false, allow_negative = false })
+      controls.add({ type = "button", name = PREFIX .. "machine_add", caption = T("添加/更新", "Add/update") })
+      frame.add({ type = "flow", name = PREFIX .. "machine_rule_list", direction = "vertical" })
+    end
+  end
 end
 
 local function close_blueprint_picker(player)
@@ -912,13 +970,27 @@ function M.initialize()
     local toggle = player.gui.top[PREFIX .. "toggle"]
     if toggle and toggle.valid then toggle.destroy() end
     make_gui(player)
+    make_machine_panels(player)
     refresh_target_selector(player)
   end
 end
 
 function M.on_player_created(event)
   local player = game.get_player(event.player_index)
-  if player then make_gui(player) end
+  if player then make_gui(player); make_machine_panels(player) end
+end
+
+function M.on_gui_opened(event)
+  local player = game.get_player(event.player_index)
+  if not player then return end
+  storage.local_gui[player.index] = storage.local_gui[player.index] or {}
+  storage.local_gui[player.index].machine_entity = machine_supply.supported(event.entity) and event.entity or nil
+  refresh_machine_panels(player)
+end
+
+function M.on_gui_closed(event)
+  local gui = storage.local_gui and storage.local_gui[event.player_index]
+  if gui and event.entity and event.entity == gui.machine_entity then gui.machine_entity = nil end
 end
 
 function M.on_gui_selection_changed(event)
@@ -1058,6 +1130,7 @@ function M.on_gui_click(event)
       local old_toggle = online.gui.top[PREFIX .. "toggle"]
       if old_toggle and old_toggle.valid then old_toggle.destroy() end
       make_gui(online)
+      make_machine_panels(online)
       refresh_target_selector(online)
       online.gui.left[PREFIX .. "panel"].visible = was_visible ~= false
     end
@@ -1108,6 +1181,47 @@ function M.on_gui_click(event)
     return
   end
   local ok, err = pcall(function()
+    if name == PREFIX .. "delivery" then
+      local controls = element.parent
+      local item = controls[PREFIX .. "delivery_item"].elem_value
+      local count = math.max(1, math.min(1000,
+        math.floor(tonumber(controls[PREFIX .. "delivery_count"].text) or 1)))
+      if not item then error(T("请先在物品列表中选择一种物资", "Choose an item first")) end
+      local names = command_names(player)
+      local who = names[1]
+      if not who then error(T("当前没有助手", "No companion exists")) end
+      companion.set_context(who)
+      tasks.enqueue({
+        task = { type = "fetch_deliver", items = { [item] = count }, player = player.name,
+          material_search_radius = 256 },
+        replace = true, background = true,
+      })
+      companion.set_context(nil)
+      pcall(chatter.order, { who })
+      status(player, string.format(T("已让 %s 寻找并送来 %d 个 %s", "Asked %s to find and deliver %d %s"),
+        who, count, item))
+      return
+    elseif name == PREFIX .. "machine_add" then
+      local state = storage.local_gui[player.index]
+      local entity = state and state.machine_entity
+      if not machine_supply.supported(entity) then error(T("生产设备已经关闭或不存在", "The production machine is closed or gone")) end
+      local controls = element.parent
+      local item = controls[PREFIX .. "machine_item"].elem_value
+      local count = math.floor(tonumber(controls[PREFIX .. "machine_count"].text) or 0)
+      local target = machine_supply.configure(entity, item, count)
+      refresh_machine_panels(player)
+      status(player, string.format(T("已设置设备自动保持 %d 个 %s", "Machine input target set to %d %s"), target, item))
+      return
+    elseif name == PREFIX .. "machine_remove" then
+      local state = storage.local_gui[player.index]
+      local entity = state and state.machine_entity
+      local item = element.tags and element.tags.item
+      if not (machine_supply.supported(entity) and item) then error(T("设备投料项目已经失效", "Machine input rule is no longer valid")) end
+      machine_supply.remove(entity, item)
+      refresh_machine_panels(player)
+      status(player, T("已删除设备投料项目：", "Removed machine input rule: ") .. item)
+      return
+    end
     local output_pick = string.match(name, "^" .. PREFIX .. "output_pick_(%d+)$")
     if output_pick then
       local state = storage.local_gui[player.index]

@@ -7,6 +7,7 @@ local refuel = require("scripts.actions.refuel")
 local repair = require("scripts.actions.repair")
 local turret_supply = require("scripts.actions.turret_supply")
 local arm_self = require("scripts.actions.arm_self")
+local machine_supply = require("scripts.machine_supply")
 
 local M = {}
 local ENEMY_TYPES = { "unit", "unit-spawner", "turret" }
@@ -211,7 +212,8 @@ function M.update()
             elseif work.key == "turret" and assigned.turret < 2 then
               task = turret_supply.find_task(c, radius, storage.autonomy_turret_ammo_target or 10, center)
             elseif work.key == "smelt" and assigned.smelt < 2 then
-              task = autonomous_smelting_task(c, radius, center)
+              task = machine_supply.find_task(c, radius, center)
+                or autonomous_smelting_task(c, radius, center)
             elseif work.key == "patrol" and assigned.patrol < 2 then
               local rec = companion.record(name)
               local saved = rec and rec.saved_patrol_route
