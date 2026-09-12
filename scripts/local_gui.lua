@@ -208,6 +208,7 @@ local function refresh_machine_panels(player)
         local row = list.add({ type = "flow", direction = "horizontal" })
         row.add({ type = "label", caption = { "", prototypes.item[rule.item].localised_name,
           T("：目标 ", ": target "), rule.target,
+          T("，低于 ", ", below "), rule.threshold, "%",
           rule.compatible and "" or T("（当前配方不兼容，已停用）", " (incompatible with current recipe; paused)") } })
         row.add({ type = "button", name = PREFIX .. "machine_remove", caption = T("删除", "Remove"),
           tags = { item = rule.item } })
@@ -216,6 +217,25 @@ local function refresh_machine_panels(player)
         list.add({ type = "label", caption = T("尚未设置投料项目", "No input rules configured") })
       end
     end
+  end
+end
+
+local function refresh_chest_panel(player)
+  local state = storage.local_gui and storage.local_gui[player.index]
+  local entity = state and state.chest_entity
+  local configured = machine_supply.supported_chest(entity) and machine_supply.list_chest(entity) or {}
+  local frame = player.gui.relative[PREFIX .. "chest_panel"]
+  local list = frame and frame[PREFIX .. "chest_rule_list"]
+  if not (list and list.valid) then return end
+  list.clear()
+  for _, item in ipairs(configured) do
+    local row = list.add({ type = "flow", direction = "horizontal" })
+    row.add({ type = "label", caption = prototypes.item[item].localised_name })
+    row.add({ type = "button", name = PREFIX .. "chest_remove", caption = T("删除", "Remove"),
+      tags = { item = item } })
+  end
+  if #configured == 0 then
+    list.add({ type = "label", caption = T("尚未设置收纳物品", "No accepted products configured") })
   end
 end
 
@@ -229,16 +249,36 @@ local function make_machine_panels(player)
       anchor = { gui = spec.gui, position = defines.relative_gui_position.right },
     })
     if frame then
-      frame.add({ type = "label", caption = T("选择物品和设备内目标数量", "Choose an item and its target amount") })
+      frame.add({ type = "label", caption = T("设置目标数量与补货阈值百分比", "Set target amount and refill threshold percent") })
       local controls = frame.add({ type = "flow", name = PREFIX .. "machine_controls", direction = "horizontal" })
       controls.add({ type = "choose-elem-button", name = PREFIX .. "machine_item", elem_type = "item" })
       controls.add({ type = "textfield", name = PREFIX .. "machine_count", text = "50",
         numeric = true, allow_decimal = false, allow_negative = false })
+      controls.add({ type = "textfield", name = PREFIX .. "machine_threshold", text = "25",
+        numeric = true, allow_decimal = false, allow_negative = false,
+        tooltip = T("库存低于目标的此百分比时补货", "Refill below this percentage of the target") })
       controls.add({ type = "button", name = PREFIX .. "machine_add", caption = T("添加/更新", "Add/update") })
       frame.add({ type = "button", name = PREFIX .. "machine_output", caption = T("设置成品收纳箱", "Set output chest") })
       frame.add({ type = "label", caption = T("只服务本清单标注的设备；成品满仓后自动收纳", "Only listed machines are serviced; full outputs are stored automatically") })
       frame.add({ type = "flow", name = PREFIX .. "machine_rule_list", direction = "vertical" })
     end
+  end
+  local old = player.gui.relative[PREFIX .. "chest_panel"]
+  if old and old.valid then old.destroy() end
+  local frame = player.gui.relative.add({
+    type = "frame", name = PREFIX .. "chest_panel",
+    caption = T("助手分类收纳清单", "Companion storage list"), direction = "vertical",
+    anchor = { gui = defines.relative_gui_type.container_gui,
+      position = defines.relative_gui_position.right },
+  })
+  if frame then
+    frame.add({ type = "label", caption = T(
+      "登记此箱接收的成品；生产助手会自动寻找，无需逐台指定箱子",
+      "Register products for this chest; production helpers find it automatically") })
+    local controls = frame.add({ type = "flow", name = PREFIX .. "chest_controls", direction = "horizontal" })
+    controls.add({ type = "choose-elem-button", name = PREFIX .. "chest_item", elem_type = "item" })
+    controls.add({ type = "button", name = PREFIX .. "chest_add", caption = T("添加", "Add") })
+    frame.add({ type = "flow", name = PREFIX .. "chest_rule_list", direction = "vertical" })
   end
 end
 
@@ -264,8 +304,11 @@ local function show_blueprint_materials(player, info)
   })
   local scale = 1
   pcall(function() scale = tonumber(player.display_scale) or 1 end)
-  local logical_width = player.display_resolution.width / math.max(0.5, scale)
-  frame.location = { x = math.max(0, math.floor(logical_width - 330)), y = 310 }
+  frame.location = {
+    x = math.max(0, math.floor(player.display_resolution.width - 340 * scale)),
+    y = math.max(0, math.floor(300 * scale)),
+  }
+  frame.bring_to_front()
   frame.add({ type = "label", caption = T("建筑虚影：", "Ghost entities: ") .. tostring(info.entity_count) .. T(" 个", "") })
   local scroll = frame.add({ type = "scroll-pane" })
   scroll.style.maximal_height = 360
@@ -986,6 +1029,9 @@ function M.initialize()
     make_gui(player)
     make_machine_panels(player)
     refresh_target_selector(player)
+    local saved_materials = storage.local_gui[player.index]
+      and storage.local_gui[player.index].last_blueprint_materials
+    if saved_materials then show_blueprint_materials(player, saved_materials) end
   end
 end
 
@@ -994,17 +1040,29 @@ function M.on_player_created(event)
   if player then make_gui(player); make_machine_panels(player) end
 end
 
+function M.on_display_changed(event)
+  local player = game.get_player(event.player_index)
+  local state = player and storage.local_gui[player.index]
+  if state and state.last_blueprint_materials
+      and player.gui.screen[PREFIX .. "blueprint_materials"] then
+    pcall(show_blueprint_materials, player, state.last_blueprint_materials)
+  end
+end
+
 function M.on_gui_opened(event)
   local player = game.get_player(event.player_index)
   if not player then return end
   storage.local_gui[player.index] = storage.local_gui[player.index] or {}
   storage.local_gui[player.index].machine_entity = machine_supply.supported(event.entity) and event.entity or nil
+  storage.local_gui[player.index].chest_entity = machine_supply.supported_chest(event.entity) and event.entity or nil
   refresh_machine_panels(player)
+  refresh_chest_panel(player)
 end
 
 function M.on_gui_closed(event)
   local gui = storage.local_gui and storage.local_gui[event.player_index]
   if gui and event.entity and event.entity == gui.machine_entity then gui.machine_entity = nil end
+  if gui and event.entity and event.entity == gui.chest_entity then gui.chest_entity = nil end
 end
 
 function M.on_gui_selection_changed(event)
@@ -1147,6 +1205,9 @@ function M.on_gui_click(event)
       make_machine_panels(online)
       refresh_target_selector(online)
       online.gui.left[PREFIX .. "panel"].visible = was_visible ~= false
+      local saved_materials = storage.local_gui[online.index]
+        and storage.local_gui[online.index].last_blueprint_materials
+      if saved_materials then show_blueprint_materials(online, saved_materials) end
     end
     status(player, T("界面和内置蓝图已切换为中文", "Interface and built-in blueprints switched to English"))
     return
@@ -1232,9 +1293,13 @@ function M.on_gui_click(event)
       local controls = element.parent
       local item = controls[PREFIX .. "machine_item"].elem_value
       local count = math.floor(tonumber(controls[PREFIX .. "machine_count"].text) or 0)
-      local target = machine_supply.configure(entity, item, count)
+      local threshold = math.floor(tonumber(controls[PREFIX .. "machine_threshold"].text) or 25)
+      local target = machine_supply.configure(entity, item, count, threshold)
       refresh_machine_panels(player)
-      status(player, string.format(T("已设置设备自动保持 %d 个 %s", "Machine input target set to %d %s"), target, item))
+      status(player, string.format(T(
+        "已设置 %s：低于目标的 %d%% 时补回 %d 个",
+        "%s: below %d%% of target, refill to %d"),
+        item, math.max(0, math.min(100, threshold)), target))
       return
     elseif name == PREFIX .. "machine_remove" then
       local state = storage.local_gui[player.index]
@@ -1257,6 +1322,28 @@ function M.on_gui_click(event)
       state.pending_output_companions = command_names(player)
       local ok, err = pcall(choose_output_product, player, entity)
       if not ok then error(err) end
+      return
+    elseif name == PREFIX .. "chest_add" then
+      local state = storage.local_gui[player.index]
+      local entity = state and state.chest_entity
+      if not machine_supply.supported_chest(entity) then
+        error(T("箱子已经关闭或不存在", "The chest is closed or no longer exists"))
+      end
+      local item = element.parent[PREFIX .. "chest_item"].elem_value
+      machine_supply.configure_chest(entity, item)
+      refresh_chest_panel(player)
+      status(player, T("已登记此箱自动收纳：", "This chest now automatically stores: ") .. item)
+      return
+    elseif name == PREFIX .. "chest_remove" then
+      local state = storage.local_gui[player.index]
+      local entity = state and state.chest_entity
+      local item = element.tags and element.tags.item
+      if not (machine_supply.supported_chest(entity) and item) then
+        error(T("箱子收纳项目已经失效", "The chest storage rule is no longer valid"))
+      end
+      machine_supply.remove_chest_item(entity, item)
+      refresh_chest_panel(player)
+      status(player, T("已删除箱子收纳项目：", "Removed chest storage rule: ") .. item)
       return
     end
     local output_pick = string.match(name, "^" .. PREFIX .. "output_pick_(%d+)$")

@@ -1,6 +1,6 @@
 # 异星工厂 AI 玩家助手 / Factorio AI Player Assistant
 
-> 当前版本 / Current version: 0.19.4 — 修复已拆除生产设备遗留的成品路线导致自动工作崩溃。
+> 当前版本 / Current version: 0.19.5 — 箱子可登记全局分类收纳清单，生产助手按物品自动寻找目标箱。
 
 一个完全在 Factorio 2.0 游戏内运行的多助手模组，不需要外部 AI、API、Codex 或 Token。助手像真实角色一样移动、采矿、搬运、建造和战斗，所有物品都来自实际背包、箱子或采集行为。
 
@@ -98,6 +98,8 @@ This enhanced edition continues development from the mod code in Agentic-Factori
 
 - 投料清单严格校验设备当前配方：组装机和发射井只接受当前配方原料，熔炉只接受其冶炼类别原料，研究所只接受支持的科技包。燃料和模块不会混入生产投料；更换配方后不兼容的旧规则会显示为停用。
 - “生产投料”只服务打开设备后明确加入清单的机器，不再自动寻找未标注生产线。燃烧设备会连同燃料一起维护；点击设备侧栏的“设置成品收纳箱”后，只在成品库存满时搬往指定箱子。
+- 打开己方箱子可在右侧登记该箱接收的成品种类。同一种成品只需在一个或多个箱子中登记，所有已标注生产设备都会自动寻找可用目标箱，不再需要逐台设备指定。
+- 每条设备原料规则同时设置“目标数量”和“补货阈值百分比”；默认降到目标的 25% 以下才一次补回目标数量，避免少一个物品就往返。
 - Input lists are recipe-strict: assemblers and silos accept only current recipe ingredients, furnaces accept only valid smelting inputs, and labs accept supported science packs. Fuel and modules cannot leak into production input; stale rules pause visibly after a recipe change.
 
 - 自动检查燃料目标数量，依次给多个设备补充；优先使用助手背包或己方箱子中的煤炭，没有可用煤炭时才使用其他兼容燃料，全部缺少时会寻找煤矿并实际开采。

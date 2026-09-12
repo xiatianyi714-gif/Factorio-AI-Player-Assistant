@@ -1,5 +1,29 @@
 # 更新日志 / Changelog
 
+## 0.19.5
+
+### 中文
+
+- 打开普通箱或物流箱时，原版箱子窗口右侧新增“助手分类收纳清单”，可直接选择该箱接收哪些成品。
+- 生产助手发现已标注设备成品满仓后，会按成品名称自动寻找登记过且未满的己方箱子，无需再为每台生产设备单独框选目标箱。
+- 一个物品可以登记到多个箱子；助手会选择可接收物品且路线较近的箱子，箱满后自动改用其他已登记箱子。
+- 旧版设备到箱子的专属路线继续有效，已有存档无需重新设置。
+- 被拆除的分类箱及其规则会自动安全清理。
+- 设备投料规则新增可自定义补货阈值百分比，默认 25%；只有库存低于阈值才补回目标数量，不再每消耗一个就触发助手。
+- 撤销小地图下方的分类收纳汇总面板；该位置只显示最近选择的蓝图材料清单。
+- 蓝图材料清单会在载入存档后恢复显示，并随分辨率或界面缩放变化重新定位到小地图下方。
+
+### English
+
+- Opening a regular or logistic chest now shows a Companion Storage List beside the native chest window, where accepted products can be registered.
+- When a configured machine's output is full, production helpers find an available registered chest by product name, removing the need to select a destination for every machine.
+- The same product may be registered in multiple chests; helpers prefer an available nearby destination and fall back when one fills.
+- Legacy per-machine output routes remain supported, so existing saves require no reconfiguration.
+- Rules belonging to removed storage chests are cleaned automatically.
+- Machine input rules now include a configurable refill-threshold percentage (25% by default) and refill to the target only after stock falls below it.
+- Removed the classified-storage summary below the minimap; that position is reserved for the latest blueprint material list.
+- The blueprint material list is restored after loading and repositioned when display resolution or GUI scale changes.
+
 ## 0.19.4
 
 ### 中文

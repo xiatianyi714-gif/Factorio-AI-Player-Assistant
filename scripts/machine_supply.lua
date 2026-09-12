@@ -17,6 +17,11 @@ local function rules()
   return storage.machine_supply_rules
 end
 
+local function chest_rules()
+  storage.output_chest_rules = storage.output_chest_rules or {}
+  return storage.output_chest_rules
+end
+
 local function key(entity)
   return entity and entity.valid and entity.unit_number
 end
@@ -25,6 +30,40 @@ function M.supported(entity)
   return entity and entity.valid and entity.unit_number and entity.force == game.forces.player
     and (entity.type == "furnace" or entity.type == "assembling-machine"
       or entity.type == "lab" or entity.type == "rocket-silo")
+end
+
+function M.supported_chest(entity)
+  return entity and entity.valid and entity.unit_number and entity.force == game.forces.player
+    and (entity.type == "container" or entity.type == "logistic-container")
+end
+
+function M.configure_chest(entity, item)
+  if not M.supported_chest(entity) then error("该箱子不支持助手收纳清单") end
+  if type(item) ~= "string" or not prototypes.item[item] then error("请选择这个箱子要接收的物品") end
+  local id = key(entity)
+  local rec = chest_rules()[id]
+  if type(rec) ~= "table" then rec = { entity = entity, items = {} } end
+  rec.entity = entity
+  rec.items[item] = true
+  chest_rules()[id] = rec
+  return true
+end
+
+function M.remove_chest_item(entity, item)
+  local id = key(entity)
+  local rec = id and chest_rules()[id]
+  if type(rec) ~= "table" then return false end
+  rec.items[item] = nil
+  if not next(rec.items) then chest_rules()[id] = nil end
+  return true
+end
+
+function M.list_chest(entity)
+  local rec = key(entity) and chest_rules()[key(entity)]
+  local out = {}
+  for item in pairs(type(rec) == "table" and rec.items or {}) do out[#out + 1] = item end
+  table.sort(out)
+  return out
 end
 
 local function recipe_uses(recipe, item)
@@ -75,16 +114,21 @@ function M.accepts_input(entity, item)
   return false
 end
 
-function M.configure(entity, item, target)
+function M.configure(entity, item, target, threshold_percent)
   if not M.supported(entity) then error("该设备不支持自动投料清单") end
   if type(item) ~= "string" or not prototypes.item[item] then error("请选择要投入的物品") end
   if not M.accepts_input(entity, item) then
     error("所选物品不是该设备当前配方的原材料；燃料请使用补燃料功能")
   end
   target = math.max(1, math.min(1000, math.floor(tonumber(target) or 1)))
+  threshold_percent = math.max(0, math.min(100,
+    math.floor(tonumber(threshold_percent) or 25)))
   local id = key(entity)
-  local rec = rules()[id] or { entity = entity, items = {} }
+  local rec = rules()[id]
+  if type(rec) ~= "table" then rec = { entity = entity, items = {}, thresholds = {} } end
+  rec.thresholds = rec.thresholds or {}
   rec.entity, rec.items[item] = entity, target
+  rec.thresholds[item] = threshold_percent
   rules()[id] = rec
   return target
 end
@@ -94,6 +138,7 @@ function M.remove(entity, item)
   local rec = id and rules()[id]
   if not rec then return false end
   rec.items[item] = nil
+  if rec.thresholds then rec.thresholds[item] = nil end
   if not next(rec.items) then rules()[id] = nil end
   return true
 end
@@ -102,7 +147,9 @@ function M.list(entity)
   local rec = key(entity) and rules()[key(entity)]
   local out = {}
   for item, target in pairs(rec and rec.items or {}) do
-    out[#out + 1] = { item = item, target = target, compatible = M.accepts_input(entity, item) }
+    out[#out + 1] = { item = item, target = target,
+      threshold = (rec.thresholds and rec.thresholds[item]) or 25,
+      compatible = M.accepts_input(entity, item) }
   end
   table.sort(out, function(a, b) return a.item < b.item end)
   return out
@@ -154,6 +201,50 @@ local function find_output_task(c, radius, center)
     return { type = "output_sort", batch = 1000, route_key = best_key,
       only_when_full = true, one_shot = true }
   end
+
+  -- New global classification rules: a chest declares which products it
+  -- accepts, so every configured machine can find it without a per-machine
+  -- destination selection.
+  local best_route, best_route_d
+  for machine_id, rec in pairs(rules()) do
+    local source = type(rec) == "table" and rec.entity
+    if not (source and source.valid) then
+      rules()[machine_id] = nil
+    elseif source.surface == c.surface and source.force == c.force then
+      local source_d = distance_sq(source.position, center)
+      if source_d <= radius * radius then
+        local inv
+        pcall(function() inv = source.get_output_inventory() end)
+        local full = false
+        pcall(function() full = inv and inv.is_full() end)
+        if full then
+          for _, stack in ipairs(inv.get_contents()) do
+            for chest_id, chest_rec in pairs(chest_rules()) do
+              local destination = chest_rec.entity
+              if not (destination and destination.valid) then
+                chest_rules()[chest_id] = nil
+              elseif chest_rec.items and chest_rec.items[stack.name]
+                  and destination.surface == c.surface and destination.force == c.force then
+                local accepts = false
+                pcall(function() accepts = destination.can_insert({ name = stack.name, count = 1 }) end)
+                local route_d = source_d + distance_sq(source.position, destination.position)
+                if accepts and (not best_route_d or route_d < best_route_d) then
+                  best_route_d = route_d
+                  best_route = { source = source, destination = destination, item = stack.name }
+                end
+              end
+            end
+          end
+        end
+      end
+    end
+  end
+  if best_route then
+    local auto_key = "auto:" .. tostring(best_route.source.unit_number) .. ":"
+      .. best_route.item .. ":" .. tostring(best_route.destination.unit_number)
+    return { type = "output_sort", batch = 1000, direct_route = best_route,
+      direct_route_key = auto_key, only_when_full = true, one_shot = true }
+  end
 end
 
 local function find_fuel_task(c, radius, center)
@@ -161,7 +252,7 @@ local function find_fuel_task(c, radius, center)
   local target_count = storage.autonomy_fuel_target or 10
   local threshold = math.max(0, math.floor(math.min(2, target_count * 0.25)))
   for _, rec in pairs(rules()) do
-    local entity = rec.entity
+    local entity = type(rec) == "table" and rec.entity
     if entity and entity.valid and entity.surface == c.surface and entity.force == c.force then
       local d = distance_sq(entity.position, center)
       if d <= radius * radius then
@@ -187,7 +278,7 @@ function M.find_task(c, radius, center)
   if fuel then return fuel end
   local best, best_item, best_need, best_d
   for id, rec in pairs(rules()) do
-    local entity = rec.entity
+    local entity = type(rec) == "table" and rec.entity
     if not (entity and entity.valid) then
       rules()[id] = nil
     elseif entity.surface == c.surface and entity.force == c.force then
@@ -196,13 +287,15 @@ function M.find_task(c, radius, center)
       if d <= radius * radius and reservations.available(entity, companion.context()) then
         for item, target in pairs(rec.items or {}) do
           local current = entity.get_item_count(item)
+          local threshold_percent = (rec.thresholds and rec.thresholds[item]) or 25
+          local refill_at = math.max(1, math.ceil(target * threshold_percent / 100))
           local accepts = M.accepts_input(entity, item)
           if accepts then
             local room = false
             pcall(function() room = entity.can_insert({ name = item, count = 1 }) end)
             accepts = room or current > 0
           end
-          if current < target and accepts and has_stock(c, item, center, radius)
+          if current < refill_at and current < target and accepts and has_stock(c, item, center, radius)
               and (not best_d or d < best_d) then
             best, best_item, best_need, best_d = entity, item, target - current, d
           end

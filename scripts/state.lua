@@ -48,6 +48,7 @@ function M.init()
   storage.output_routes = storage.output_routes or {}
   storage.output_route_locks = storage.output_route_locks or {}
   storage.machine_supply_rules = storage.machine_supply_rules or {}
+  storage.output_chest_rules = storage.output_chest_rules or {}
 
   -- One-time 0.15.2 migration: an unchanged old Generalist preset enabled
   -- patrol at priority 4. Disable only that exact preset so deliberate custom

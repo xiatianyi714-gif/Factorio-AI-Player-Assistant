@@ -31,6 +31,26 @@ local function release(job)
 end
 
 local function choose_job(c, task)
+  if task.direct_route then
+    local route = task.direct_route
+    local source, destination = route.source, route.destination
+    if source and source.valid and destination and destination.valid then
+      local inv = output_inventory(source)
+      local ready = inv and inv.get_item_count(route.item) > 0
+      if ready and task.only_when_full then pcall(function() ready = inv.is_full() end) end
+      local accepts = false
+      pcall(function() accepts = destination.can_insert({ name = route.item, count = 1 }) end)
+      local key = task.direct_route_key or ("direct:" .. tostring(source.unit_number) .. ":" .. route.item)
+      local lock = storage.output_route_locks[key]
+      local free = not lock or game.tick - (lock.tick or 0) > LOCK_TICKS or lock.name == companion.context()
+      if ready and accepts and free then
+        local job = { key = key, route = route }
+        storage.output_route_locks[key] = { name = companion.context(), tick = game.tick }
+        return job
+      end
+    end
+    return nil
+  end
   local best, best_d
   for key, route in pairs(storage.output_routes or {}) do
     if not task.route_key or task.route_key == key then
