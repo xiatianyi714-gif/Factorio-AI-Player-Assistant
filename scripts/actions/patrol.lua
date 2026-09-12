@@ -45,15 +45,24 @@ end
 function M.start(task)
   local c = companion.require_companion()
   equipment.auto_arm(c) -- Being unarmed no longer prevents patrol movement.
-  local r = math.max(6, math.min(tonumber(task.radius) or 12, 40))
-  local names, index = companion.names(), 1
-  for i, name in ipairs(names) do if name == companion.context() then index = i break end end
-  local phase = (index - 1) * math.pi / 2
-  local x, y = c.position.x, c.position.y
   local points = {}
-  for i = 0, 3 do
-    local angle = phase + i * math.pi / 2
-    points[#points + 1] = safe_point(c, { x = x + math.cos(angle) * r, y = y + math.sin(angle) * r })
+  if type(task.points) == "table" and #task.points >= 2 then
+    for _, point in ipairs(task.points) do
+      if type(point) ~= "table" or type(point.x) ~= "number" or type(point.y) ~= "number" then
+        error("自定义巡逻点必须包含有效坐标")
+      end
+      points[#points + 1] = safe_point(c, { x = point.x, y = point.y })
+    end
+  else
+    local r = math.max(6, math.min(tonumber(task.radius) or 12, 40))
+    local names, index = companion.names(), 1
+    for i, name in ipairs(names) do if name == companion.context() then index = i break end end
+    local phase = (index - 1) * math.pi / 2
+    local x, y = c.position.x, c.position.y
+    for i = 0, 3 do
+      local angle = phase + i * math.pi / 2
+      points[#points + 1] = safe_point(c, { x = x + math.cos(angle) * r, y = y + math.sin(angle) * r })
+    end
   end
   task._patrol = { points = points, index = 1, walk = {}, legs = 0 }
   walk.begin(task._patrol.walk, c, points[1], 1.5)

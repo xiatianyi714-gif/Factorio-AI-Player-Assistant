@@ -110,6 +110,8 @@ local function make_gui(player)
   move.add({ type = "button", name = PREFIX .. "follow", caption = T("跟随我", "Follow me") })
   move.add({ type = "button", name = PREFIX .. "hold", caption = T("原地镇守", "Hold position") })
   move.add({ type = "button", name = PREFIX .. "patrol", caption = T("巡逻", "Patrol") })
+  move.add({ type = "button", name = PREFIX .. "patrol_custom", caption = T("自定义巡逻", "Custom patrol") })
+  move.add({ type = "button", name = PREFIX .. "patrol_finish", caption = T("完成巡逻路线", "Finish patrol route") })
   move.add({ type = "button", name = PREFIX .. "attack", caption = T("清理敌人", "Clear enemies") })
   move.add({ type = "button", name = PREFIX .. "stop", caption = T("停止命令", "Stop orders") })
   frame.add({ type = "label", caption = T("施工（材料取自助手背包）", "Construction (materials from companion inventories)") })
@@ -426,6 +428,29 @@ local function order_all(player, make_task)
     tasks.enqueue({ task = make_task(c, name), replace = true, background = true })
   end
   companion.set_context(nil)
+end
+
+local function start_custom_patrol(player)
+  local state = storage.local_gui[player.index]
+  local pending = state and state.pending_patrol
+  if not pending or #pending.points < 2 then
+    status(player, T("请至少设置两个巡逻点", "Set at least two patrol points"))
+    return false
+  end
+  local assigned = 0
+  for _, name in ipairs(pending.companions or {}) do
+    if companion.get(name) then
+      local points = {}
+      for i, point in ipairs(pending.points) do points[i] = { x = point.x, y = point.y } end
+      order(player, { type = "patrol", points = points }, name)
+      assigned = assigned + 1
+    end
+  end
+  state.pending_patrol = nil
+  player.clear_cursor()
+  status(player, string.format(T("已命令 %d 个助手循环巡逻 %d 个路线点", "Ordered %d companion(s) to loop through %d patrol points"),
+    assigned, #pending.points))
+  return true
 end
 
 local WEAPON_PAIRS = {
@@ -897,6 +922,15 @@ function M.on_gui_click(event)
     elseif name == PREFIX .. "patrol" then
       order_all(player, function() return { type = "patrol", radius = 12 } end)
       status(player, command_label(player) .. T(" 正在周边巡逻", " are patrolling nearby"))
+    elseif name == PREFIX .. "patrol_custom" then
+      ensure_companion(player)
+      local state = storage.local_gui[player.index]
+      state.pending_patrol = { points = {}, companions = command_names(player) }
+      player.clear_cursor()
+      player.cursor_stack.set_stack({ name = "agentic-local-patrol-route-tool", count = 1 })
+      status(player, T("请按顺序框选巡逻点；设置至少两个点后点击“完成巡逻路线”，或在最后一点右键框选", "Select patrol points in order; after at least two points click Finish Patrol Route, or alt-select the final point"))
+    elseif name == PREFIX .. "patrol_finish" then
+      start_custom_patrol(player)
     elseif name == PREFIX .. "attack" then
       local command_center = { x = player.position.x, y = player.position.y }
       order_all(player, function()
@@ -974,7 +1008,26 @@ end
 function M.on_selected_area(event)
   local player = game.get_player(event.player_index)
   if not player then return end
-  if event.item == "agentic-local-build-tool" then
+  if event.item == "agentic-local-patrol-route-tool" then
+    local state = storage.local_gui[player.index]
+    local pending = state and state.pending_patrol
+    if not pending then
+      status(player, T("没有正在设置的巡逻路线", "No patrol route is being configured"))
+      player.clear_cursor()
+      return
+    end
+    local area = event.area
+    local point = {
+      x = (area.left_top.x + area.right_bottom.x) / 2,
+      y = (area.left_top.y + area.right_bottom.y) / 2,
+    }
+    pending.points[#pending.points + 1] = point
+    if event.name == defines.events.on_player_alt_selected_area and #pending.points >= 2 then
+      start_custom_patrol(player)
+    else
+      status(player, string.format(T("已添加第 %d 个巡逻点；继续框选或点击完成", "Added patrol point %d; continue selecting or click Finish"), #pending.points))
+    end
+  elseif event.item == "agentic-local-build-tool" then
     queue_selection(player, event.entities, "build")
   elseif event.item == "agentic-local-demolish-tool" then
     queue_selection(player, event.entities, "demolish")

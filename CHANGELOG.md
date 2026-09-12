@@ -1,5 +1,16 @@
 # 更新日志 / Changelog
 
+## 0.9.15 — 自定义巡逻路线 / Custom Patrol Routes
+
+- 指令面板新增“自定义巡逻”和“完成巡逻路线”按钮，可在地图上按顺序设置两个或更多巡逻点。
+- Added “Custom Patrol” and “Finish Patrol Route” buttons for defining two or more ordered patrol points on the map.
+
+- 助手会循环沿自定义路线移动，并在途中自动发现、接近和攻击附近敌人，战斗结束后继续原路线。
+- Companions continuously loop through the custom route, automatically detecting, approaching, and attacking nearby enemies before resuming their route.
+
+- 自定义路线支持全部助手或单独助手；也可在最后一个路线点使用右键框选直接完成并开始巡逻。
+- Custom routes support all companions or an individual companion; alt-selecting the final point also finishes the route and starts patrol immediately.
+
 ## 0.9.14 — 补燃料轮巡 / Refueling Rounds
 
 - 修复发电设备燃料未完全装满时反复获得最高优先级、导致助手一直停留在同一设备旁的问题。

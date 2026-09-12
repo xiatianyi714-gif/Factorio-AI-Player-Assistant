@@ -29,6 +29,9 @@ This enhanced edition continues development from the mod code in Agentic-Factori
 - 炮塔目标弹药数量可在面板自定义；待机助手会从背包或己方箱子取得兼容弹药并主动补充低弹药炮塔。
 - Turret ammunition targets are configurable in the panel; idle companions obtain compatible ammunition from inventories or friendly chests and resupply low-ammunition turrets.
 
+- 可在地图上依次设置多个自定义巡逻点，向全部或单个助手下达循环巡逻路线；助手会沿途战斗并在战后恢复路线。
+- Define multiple ordered patrol points on the map and assign the looping route to all companions or an individual; companions fight along the way and resume the route afterward.
+
 - 跟随、原地镇守、巡逻、主动清理敌人和停止命令。
 - Follow, hold position, patrol, clear nearby enemies, and stop commands.
 

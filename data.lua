@@ -41,6 +41,26 @@ data:extend({
   },
   {
     type = "selection-tool",
+    name = "agentic-local-patrol-route-tool",
+    icon = "__base__/graphics/icons/radar.png",
+    icon_size = 64,
+    flags = { "only-in-cursor", "not-stackable", "spawnable" },
+    subgroup = "tool",
+    order = "c[automated-construction]-z[local-companion-patrol-route]",
+    stack_size = 1,
+    select = {
+      border_color = { r = 0.25, g = 0.75, b = 1 },
+      mode = { "any-tile" },
+      cursor_box_type = "copy",
+    },
+    alt_select = {
+      border_color = { r = 0.5, g = 1, b = 0.25 },
+      mode = { "any-tile" },
+      cursor_box_type = "copy",
+    },
+  },
+  {
+    type = "selection-tool",
     name = "agentic-local-blueprint-anchor-tool",
     icon = "__base__/graphics/icons/blueprint.png",
     icon_size = 64,
