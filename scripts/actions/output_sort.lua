@@ -33,6 +33,7 @@ end
 local function choose_job(c, task)
   local best, best_d
   for key, route in pairs(storage.output_routes or {}) do
+    if not task.route_key or task.route_key == key then
     local source, destination = route.source, route.destination
     if source and source.valid and destination and destination.valid then
       local inv = output_inventory(source)
@@ -41,10 +42,15 @@ local function choose_job(c, task)
       pcall(function() accepts = destination.can_insert({ name = route.item, count = 1 }) end)
       local lock = storage.output_route_locks[key]
       local free = not lock or game.tick - (lock.tick or 0) > LOCK_TICKS or lock.name == companion.context()
-      if count > 0 and accepts and free then
+      local ready = count > 0
+      if ready and task.only_when_full then
+        pcall(function() ready = inv.is_full() end)
+      end
+      if ready and accepts and free then
         local d = distance_sq(c.position, source.position)
         if not best or d < best_d then best, best_d = { key = key, route = route }, d end
       end
+    end
     end
   end
   if best then storage.output_route_locks[best.key] = { name = companion.context(), tick = game.tick } end
@@ -59,7 +65,11 @@ function M.tick(task)
     if game.tick < s.next_scan then c.walking_state = { walking = false }; return nil end
     s.next_scan = game.tick + SCAN_TICKS
     s.job = choose_job(c, task)
-    if not s.job then c.walking_state = { walking = false }; return nil end
+    if not s.job then
+      c.walking_state = { walking = false }
+      if task.one_shot then return { status = "done", detail = "当前没有满仓成品" } end
+      return nil
+    end
     s.phase = "take"
     task._approach = nil
   end
@@ -93,6 +103,7 @@ function M.tick(task)
   release(s.job)
   s.job, s.carried, s.phase = nil, nil, nil
   task._approach = nil
+  if task.one_shot then return { status = "done", detail = "已将满仓成品送到指定箱子" } end
   s.next_scan = game.tick + 30
   return nil
 end

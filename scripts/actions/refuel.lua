@@ -89,6 +89,14 @@ local function burner_fuel_count(e)
   return n -- nil = not a (fueled) burner
 end
 
+local function target_allowed(task, entity)
+  if not task.target_entities then return true end
+  for _, target in ipairs(task.target_entities) do
+    if target and target.valid and target == entity then return true end
+  end
+  return false
+end
+
 local function is_power_device(e)
   return e and POWER_TYPES[e.type] == true
 end
@@ -119,7 +127,7 @@ local function batch_fuel_need(c, task, item_name)
     radius = task.radius,
     force = c.force,
   })) do
-    if e.valid and e.type ~= "character" then
+    if e.valid and e.type ~= "character" and target_allowed(task, e) then
       local count = burner_fuel_count(e)
       if count ~= nil and needs_fuel(e, task) then
         local accepted = compatible_fuel(item_name, e.burner, task.fuel)
@@ -313,7 +321,7 @@ function M.tick(task)
       local fuel_left = burner_fuel_count(e)
       local blocked_until = e.unit_number and rf.unserviceable[e.unit_number]
       local serviced = e.unit_number and rf.serviced_this_round[e.unit_number]
-      if fuel_left ~= nil and needs_fuel(e, task)
+      if target_allowed(task, e) and fuel_left ~= nil and needs_fuel(e, task)
         and not serviced and (not blocked_until or game.tick >= blocked_until)
         and reservations.available(e, companion.context(), task.id) then
         local d = dist_sq(e.position, c.position)

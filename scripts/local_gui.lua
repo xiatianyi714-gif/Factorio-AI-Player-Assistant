@@ -234,6 +234,8 @@ local function make_machine_panels(player)
       controls.add({ type = "textfield", name = PREFIX .. "machine_count", text = "50",
         numeric = true, allow_decimal = false, allow_negative = false })
       controls.add({ type = "button", name = PREFIX .. "machine_add", caption = T("添加/更新", "Add/update") })
+      frame.add({ type = "button", name = PREFIX .. "machine_output", caption = T("设置成品收纳箱", "Set output chest") })
+      frame.add({ type = "label", caption = T("只服务本清单标注的设备；成品满仓后自动收纳", "Only listed machines are serviced; full outputs are stored automatically") })
       frame.add({ type = "flow", name = PREFIX .. "machine_rule_list", direction = "vertical" })
     end
   end
@@ -1222,6 +1224,19 @@ function M.on_gui_click(event)
       refresh_machine_panels(player)
       status(player, T("已删除设备投料项目：", "Removed machine input rule: ") .. item)
       return
+    elseif name == PREFIX .. "machine_output" then
+      local state = storage.local_gui[player.index]
+      local entity = state and state.machine_entity
+      if not machine_supply.is_configured(entity) then
+        error(T("请先为该设备添加至少一种投料原料", "Add at least one input rule to this machine first"))
+      end
+      state.pending_full = nil
+      state.pending_output = nil
+      state.output_choices = nil
+      state.pending_output_companions = command_names(player)
+      local ok, err = pcall(choose_output_product, player, entity)
+      if not ok then error(err) end
+      return
     end
     local output_pick = string.match(name, "^" .. PREFIX .. "output_pick_(%d+)$")
     if output_pick then
@@ -1645,6 +1660,10 @@ function M.on_selected_area(event)
         return
       end
       start_combined_jobs(player, combined, target)
+      return
+    end
+    if not machine_supply.has_rule(target, pending.item) then
+      status(player, "该设备没有标注此投料项目；请先打开设备并加入助手自动投料清单")
       return
     end
     local assigned = 0

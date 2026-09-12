@@ -1,5 +1,23 @@
 # 更新日志 / Changelog
 
+## 0.19.2
+
+### 中文
+
+- “生产投料”改为严格设备白名单：助手只会服务玩家打开设备后明确添加过投料清单的机器。
+- 移除自动寻找未标注熔炉并投入物品的旧逻辑；一次性生产投料命令也必须匹配设备清单。
+- 已标注的燃烧设备缺少燃料时，生产助手会从自身背包或己方箱子取燃料并只补给该设备。
+- 设备侧栏新增“设置成品收纳箱”；选择成品和指定箱子后，成品库存满时会自动搬运。
+- 满仓收纳、燃料和原料补充整合进同一个“生产投料”工作优先级循环，满仓收纳优先，避免生产堵塞。
+
+### English
+
+- Production supply is now a strict machine allowlist: companions service only machines explicitly configured through their input list.
+- Removed the legacy fallback that automatically fed unmarked furnaces; one-shot production supply must also match a configured rule.
+- Configured burner machines receive fuel from companion inventories or friendly chests, scoped only to that machine.
+- Added Set Output Chest to the machine side panel; after choosing a product and chest, collection starts when the output inventory is full.
+- Full-output collection, scoped fuel and ingredient supply now share the Production work-priority loop, with blocked outputs handled first.
+
 ## 0.19.1
 
 ### 中文

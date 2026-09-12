@@ -7,6 +7,11 @@ local M = {}
 local CHEST_TYPES = { "container", "logistic-container" }
 local category_inputs
 
+local function distance_sq(a, b)
+  local x, y = a.x - b.x, a.y - b.y
+  return x * x + y * y
+end
+
 local function rules()
   storage.machine_supply_rules = storage.machine_supply_rules or {}
   return storage.machine_supply_rules
@@ -103,6 +108,16 @@ function M.list(entity)
   return out
 end
 
+function M.is_configured(entity)
+  local rec = key(entity) and rules()[key(entity)]
+  return rec ~= nil and next(rec.items or {}) ~= nil
+end
+
+function M.has_rule(entity, item)
+  local rec = key(entity) and rules()[key(entity)]
+  return rec ~= nil and rec.items ~= nil and rec.items[item] ~= nil
+end
+
 local function has_stock(c, item, center, radius)
   if c.get_main_inventory().get_item_count(item) > 0 then return true end
   for _, box in ipairs(c.surface.find_entities_filtered({
@@ -114,7 +129,59 @@ local function has_stock(c, item, center, radius)
   return false
 end
 
+local function find_output_task(c, radius, center)
+  local best_key, best_d
+  for route_key, route in pairs(storage.output_routes or {}) do
+    local source, destination = route.source, route.destination
+    if M.is_configured(source) and source.surface == c.surface and source.force == c.force
+        and destination and destination.valid then
+      local d = distance_sq(source.position, center)
+      if d <= radius * radius then
+        local inv
+        pcall(function() inv = source.get_output_inventory() end)
+        local full = false
+        pcall(function() full = inv and inv.is_full() end)
+        if full and inv.get_item_count(route.item) > 0 and (not best_d or d < best_d) then
+          best_key, best_d = route_key, d
+        end
+      end
+    end
+  end
+  if best_key then
+    return { type = "output_sort", batch = 1000, route_key = best_key,
+      only_when_full = true, one_shot = true }
+  end
+end
+
+local function find_fuel_task(c, radius, center)
+  local best, best_d
+  local target_count = storage.autonomy_fuel_target or 10
+  local threshold = math.max(0, math.floor(math.min(2, target_count * 0.25)))
+  for _, rec in pairs(rules()) do
+    local entity = rec.entity
+    if entity and entity.valid and entity.surface == c.surface and entity.force == c.force then
+      local d = distance_sq(entity.position, center)
+      if d <= radius * radius then
+        local fuel_count
+        pcall(function() fuel_count = entity.burner and entity.burner.inventory.get_item_count() end)
+        if fuel_count ~= nil and fuel_count <= threshold and (not best_d or d < best_d) then
+          best, best_d = entity, d
+        end
+      end
+    end
+  end
+  if best then
+    return { type = "keep_fueled", center = center, radius = radius,
+      top_up_count = target_count, max_empty_scans = 1, target_entities = { best } }
+  end
+end
+
 function M.find_task(c, radius, center)
+  -- A full output blocks production, so clear it before fetching more input.
+  local output = find_output_task(c, radius, center)
+  if output then return output end
+  local fuel = find_fuel_task(c, radius, center)
+  if fuel then return fuel end
   local best, best_item, best_need, best_d
   for id, rec in pairs(rules()) do
     local entity = rec.entity

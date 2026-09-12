@@ -213,7 +213,6 @@ function M.update()
               task = turret_supply.find_task(c, radius, storage.autonomy_turret_ammo_target or 10, center)
             elseif work.key == "smelt" and assigned.smelt < 2 then
               task = machine_supply.find_task(c, radius, center)
-                or autonomous_smelting_task(c, radius, center)
             elseif work.key == "patrol" and assigned.patrol < 2 then
               local rec = companion.record(name)
               local saved = rec and rec.saved_patrol_route
