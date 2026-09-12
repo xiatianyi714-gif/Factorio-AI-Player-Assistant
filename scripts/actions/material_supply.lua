@@ -40,7 +40,10 @@ end
 -- Returns "ok" when the helper has the item, "missing" when no stocked chest
 -- exists in the construction area, and nil while walking/collecting.
 function M.ensure(task, c, item_name, wanted, center)
-  if c.get_item_count(item_name) > 0 then
+  -- Work materials must be physically present in the main inventory. Using
+  -- LuaControl.get_item_count here also sees equipped ammunition, which could
+  -- make a supply task consume the magazine reserved for the companion.
+  if c.get_main_inventory().get_item_count(item_name) > 0 then
     task._material_supply = nil
     return "ok"
   end

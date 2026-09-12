@@ -1,5 +1,21 @@
 # 更新日志 / Changelog
 
+## 0.16.1
+
+### 中文
+
+- 炮塔补弹前优先检查助手当前选中武器的弹药，并尽量从主背包或己方箱子补满一组。
+- 炮塔现在只能接收助手主背包中多余的兼容弹药，不再统计或移除武器弹药槽中的自用弹药。
+- 找不到自身所需弹药时会暂停炮塔补给，避免为了炮塔让助手失去战斗能力。
+- 修正通用取料判断会把装备槽弹药误认为普通搬运材料的问题。
+
+### English
+
+- Turret servicing first checks the selected weapon and fills one personal ammunition stack from carried supplies or friendly chests when possible.
+- Turrets may now receive only compatible surplus from the companion's main inventory; equipped personal ammunition is never counted or removed.
+- If personal ammunition cannot be found, turret servicing pauses instead of leaving the companion unable to fight.
+- Fixed shared material collection treating equipped ammunition as ordinary cargo.
+
 ## 0.16.0
 
 ### 中文

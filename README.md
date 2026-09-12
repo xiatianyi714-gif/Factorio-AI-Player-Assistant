@@ -1,6 +1,6 @@
 # 异星工厂 AI 玩家助手 / Factorio AI Player Assistant
 
-> 当前版本 / Current version: 0.16.0 — 助手会用自然气泡回应命令、报告遭遇与受伤，并在基地遇袭时全员集结防守。
+> 当前版本 / Current version: 0.16.1 — 炮塔补弹前优先补满助手当前武器的一组弹药，并且绝不取走装备槽中的自用弹药。
 
 一个完全在 Factorio 2.0 游戏内运行的多助手模组，不需要外部 AI、API、Codex 或 Token。助手像真实角色一样移动、采矿、搬运、建造和战斗，所有物品都来自实际背包、箱子或采集行为。
 
@@ -34,8 +34,8 @@ This enhanced edition continues development from the mod code in Agentic-Factori
 - 补燃料优先保障发电设备并尽量填满其燃料库存，之后再按设定数量补充普通设备。
 - Refueling prioritizes power equipment and fills its fuel inventory whenever possible before servicing ordinary machines to the configured amount.
 
-- 炮塔目标弹药数量可在面板自定义；待机助手会从背包或己方箱子取得兼容弹药并主动补充低弹药炮塔。
-- Turret ammunition targets are configurable in the panel; idle companions obtain compatible ammunition from inventories or friendly chests and resupply low-ammunition turrets.
+- 炮塔目标弹药数量可在面板自定义；补弹前会优先从背包或己方箱子补满助手当前武器的一组弹药，只有主背包中多余的兼容弹药才能交给炮塔，装备槽中的自用弹药不会被取走。
+- Turret ammunition targets are configurable. Before servicing a turret, a companion fills one stack for its selected weapon from carried or stored supplies; only compatible surplus in the main inventory may be donated, never equipped personal ammunition.
 - 每个助手都可像《环世界》一样单独设置维修、补燃料、炮塔补弹、生产投料、巡逻和采矿的工作优先级（1–4 或关闭）；同级工作会轮换，战斗自卫始终优先。
 - Each companion has RimWorld-style individual priorities (1–4 or Off) for repair, refueling, turret supply, production input, patrol and mining; equal-priority jobs rotate, while self-defense always comes first.
 - 主面板实时显示每个助手的当前工作、生命、背包数量、排队任务、战斗后恢复任务及最近失败原因。

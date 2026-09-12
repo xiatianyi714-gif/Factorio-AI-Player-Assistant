@@ -1,6 +1,7 @@
 -- Short autonomous job: obtain compatible ammunition from the companion's
 -- inventory or a friendly chest, walk to an ammo turret, and top it up.
 local companion = require("scripts.companion")
+local equipment = require("scripts.equipment")
 local approach = require("scripts.actions.approach")
 local material_supply = require("scripts.actions.material_supply")
 local reservations = require("scripts.reservations")
@@ -98,8 +99,32 @@ function M.tick(task)
   local current = turret_count(turret)
   if current >= task.target_count then return { status = "done", detail = "炮塔弹药已经充足" } end
 
+  -- Personal combat readiness always comes first. Keep the selected weapon's
+  -- matching ammo slot at one full stack before donating any loose rounds.
+  -- Ammunition in equipment slots is never counted as transferable cargo.
+  equipment.auto_arm(c)
+  local _, gun_slot = equipment.current_gun(c)
+  local personal_ammo, personal_count = equipment.slot_ammo(c, gun_slot)
+  if personal_ammo then
+    local reserve = (prototypes.item[personal_ammo] and prototypes.item[personal_ammo].stack_size) or 1
+    if personal_count < reserve then
+      local main = c.get_main_inventory()
+      if main.get_item_count(personal_ammo) == 0 then
+        local supplied = material_supply.ensure(task, c, personal_ammo,
+          reserve - personal_count, c.position)
+        if supplied == nil then return nil end
+        if supplied == "missing" then
+          return { status = "failed", detail = "自身战斗弹药不足，已暂停炮塔补弹" }
+        end
+      end
+      local ok = pcall(equipment.equip, { ammo = personal_ammo })
+      if not ok then return { status = "failed", detail = "无法补充自身战斗弹药" } end
+    end
+  end
+
   local ammo = carried_ammo(c, turret) or task.ammo
-  if c.get_item_count(ammo) == 0 then
+  local main = c.get_main_inventory()
+  if main.get_item_count(ammo) == 0 then
     local supplied = material_supply.ensure(task, c, ammo,
       task.target_count - current, turret.position)
     if supplied == nil then return nil end
@@ -109,10 +134,10 @@ function M.tick(task)
   local reached = approach.ensure(task, c, turret.position, c.reach_distance)
   if type(reached) == "table" then return reached end
   if reached ~= "ok" then return nil end
-  local wanted = math.min(c.get_item_count(ammo), task.target_count - current)
+  local wanted = math.min(main.get_item_count(ammo), task.target_count - current)
   local inserted = 0
   pcall(function() inserted = ammo_inventory(turret).insert({ name = ammo, count = wanted }) end)
-  if inserted > 0 then c.remove_item({ name = ammo, count = inserted }) end
+  if inserted > 0 then main.remove({ name = ammo, count = inserted }) end
   return inserted > 0
     and { status = "done", detail = string.format("向炮塔补充了 %d 发 %s", inserted, ammo) }
     or { status = "failed", detail = "炮塔拒绝弹药或弹药库存已满" }
