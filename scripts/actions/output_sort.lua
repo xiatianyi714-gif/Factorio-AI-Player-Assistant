@@ -94,7 +94,7 @@ function M.tick(task)
     s.job = choose_job(c, task)
     if not s.job then
       c.walking_state = { walking = false }
-      if task.one_shot then return { status = "done", detail = "当前没有满仓成品" } end
+      if task.one_shot then return { status = "done", detail = "当前没有可收纳成品" } end
       return nil
     end
     s.phase = "take"
@@ -130,7 +130,7 @@ function M.tick(task)
   release(s.job)
   s.job, s.carried, s.phase = nil, nil, nil
   task._approach = nil
-  if task.one_shot then return { status = "done", detail = "已将满仓成品送到指定箱子" } end
+  if task.one_shot then return { status = "done", detail = "已将成品送到指定箱子" } end
   s.next_scan = game.tick + 30
   return nil
 end

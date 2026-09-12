@@ -1,5 +1,19 @@
 # 更新日志 / Changelog
 
+## 0.19.7
+
+### 中文
+
+- 修复箱子已经设置分类收纳、生产优先级也已开启，但待机助手仍不搬运的问题。
+- 只登记收纳箱即可：助手会自动寻找工作范围内产出对应物品的熔炉、组装机和火箭发射井，无需再给来源设备设置投料清单。
+- 设备只要已有匹配成品就会整批搬运，不再必须等到成品满仓；搬运仍遵守助手背包、步行、正常伸手距离和箱子容量。
+
+### English
+
+- Fixed idle helpers not collecting products despite an enabled production priority and a configured classification chest.
+- Registering the destination chest is now sufficient: helpers discover matching nearby furnaces, assembling machines and rocket silos without requiring an input rule on each source.
+- Matching output is moved in batches as soon as it exists instead of waiting for a full-output state, while retaining physical inventory, walking, reach and chest-capacity rules.
+
 ## 0.19.6
 
 ### 中文

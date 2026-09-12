@@ -5,6 +5,7 @@ local reservations = require("scripts.reservations")
 
 local M = {}
 local CHEST_TYPES = { "container", "logistic-container" }
+local PRODUCTION_TYPES = { "furnace", "assembling-machine", "rocket-silo" }
 local category_inputs
 
 local function distance_sq(a, b)
@@ -218,7 +219,7 @@ local function find_output_task(c, radius, center)
     if not (source and source.valid and destination and destination.valid) then
       storage.output_routes[route_key] = nil
       if storage.output_route_locks then storage.output_route_locks[route_key] = nil end
-    elseif M.is_configured(source) and source.surface == c.surface and source.force == c.force
+    elseif source.surface == c.surface and source.force == c.force
         and destination and destination.valid then
       local d = distance_sq(source.position, center)
       if d <= radius * radius then
@@ -236,36 +237,32 @@ local function find_output_task(c, radius, center)
       only_when_full = true, one_shot = true }
   end
 
-  -- New global classification rules: a chest declares which products it
-  -- accepts, so every configured machine can find it without a per-machine
-  -- destination selection.
+  -- A classified chest is itself enough to enable collection. Scan nearby
+  -- production entities directly: users should not have to repeat an input
+  -- configuration on every source machine, nor wait until output is blocked.
   local best_route, best_route_d
-  for machine_id, rec in pairs(rules()) do
-    local source = type(rec) == "table" and rec.entity
-    if not (source and source.valid) then
-      rules()[machine_id] = nil
-    elseif source.surface == c.surface and source.force == c.force then
+  local sources = c.surface.find_entities_filtered({
+    position = center, radius = radius, force = c.force, type = PRODUCTION_TYPES,
+  })
+  for _, source in ipairs(sources) do
+    local inv
+    pcall(function() inv = source.get_output_inventory() end)
+    if inv then
       local source_d = distance_sq(source.position, center)
-      if source_d <= radius * radius then
-        local inv
-        pcall(function() inv = source.get_output_inventory() end)
-        local full = output_blocked(source, inv)
-        if full then
-          for _, stack in ipairs(inv.get_contents()) do
-            for chest_id, chest_rec in pairs(chest_rules()) do
-              local destination = chest_rec.entity
-              if not (destination and destination.valid) then
-                chest_rules()[chest_id] = nil
-              elseif chest_rec.items and chest_rec.items[stack.name]
-                  and destination.surface == c.surface and destination.force == c.force then
-                local accepts = false
-                pcall(function() accepts = destination.can_insert({ name = stack.name, count = 1 }) end)
-                local route_d = source_d + distance_sq(source.position, destination.position)
-                if accepts and (not best_route_d or route_d < best_route_d) then
-                  best_route_d = route_d
-                  best_route = { source = source, destination = destination, item = stack.name }
-                end
-              end
+      for _, stack in ipairs(inv.get_contents()) do
+        for chest_id, chest_rec in pairs(chest_rules()) do
+          local destination = type(chest_rec) == "table" and chest_rec.entity
+          if not (destination and destination.valid) then
+            chest_rules()[chest_id] = nil
+          elseif chest_rec.items and chest_rec.items[stack.name]
+              and destination.surface == c.surface and destination.force == c.force
+              and distance_sq(destination.position, center) <= radius * radius then
+            local accepts = false
+            pcall(function() accepts = destination.can_insert({ name = stack.name, count = 1 }) end)
+            local route_d = source_d + distance_sq(source.position, destination.position)
+            if accepts and (not best_route_d or route_d < best_route_d) then
+              best_route_d = route_d
+              best_route = { source = source, destination = destination, item = stack.name }
             end
           end
         end
@@ -276,7 +273,7 @@ local function find_output_task(c, radius, center)
     local auto_key = "auto:" .. tostring(best_route.source.unit_number) .. ":"
       .. best_route.item .. ":" .. tostring(best_route.destination.unit_number)
     return { type = "output_sort", batch = 1000, direct_route = best_route,
-      direct_route_key = auto_key, only_when_full = true, one_shot = true }
+      direct_route_key = auto_key, only_when_full = false, one_shot = true }
   end
 end
 
