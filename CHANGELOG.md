@@ -1,5 +1,23 @@
 # 更新日志 / Changelog
 
+## 0.15.3
+
+### 中文
+
+- 待机助手继续按个人优先级检查维修、补燃料、炮塔补弹、生产和采矿，只有没有更优先工作时才考虑巡逻。
+- 自动巡逻不再生成临时方形路线，只使用该助手亲自保存的巡逻路线，并严格按保存点顺序完成一轮。
+- 保存新巡逻路线时会自动以最低优先级开启该助手的巡逻工作；玩家仍可在工作优先级中关闭或提高它。
+- 没有保存路线时不会用随机移动代替巡逻，助手会原地等待下一次维修、燃料或其他真实工作检查。
+- 每轮巡逻结束后重新评估工作，因此新出现的受损设备或缺燃料设备不会被永久巡逻饿死。
+
+### English
+
+- Idle helpers continue checking repair, refueling, turret supply, production and mining by personal priority, considering patrol only when no higher-priority work exists.
+- Automatic patrol no longer generates a temporary square; it uses only that helper's saved route and follows saved waypoints in order for one round.
+- Saving a route automatically enables patrol at the lowest priority; players can still disable or raise it in Work Priorities.
+- Without a saved route, patrol never falls back to random movement and the helper waits for real work.
+- Work is reassessed after every patrol round so new damage or fuel shortages cannot be starved by a permanent patrol.
+
 ## 0.15.2
 
 ### 中文

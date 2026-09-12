@@ -494,7 +494,7 @@ local WORK_TYPES = {
   { key = "refuel", zh = "补燃料", en = "Refuel", default = 2 },
   { key = "turret", zh = "炮塔补弹", en = "Turret ammo", default = 3 },
   { key = "smelt", zh = "生产投料", en = "Production", default = 4 },
-  { key = "patrol", zh = "巡逻", en = "Patrol", default = 0 },
+  { key = "patrol", zh = "巡逻", en = "Patrol", default = 4 },
   { key = "mine", zh = "采矿", en = "Mining", default = 4 },
 }
 
@@ -503,7 +503,7 @@ local ROLE_PRIORITIES = {
   miner = { repair = 0, refuel = 0, turret = 0, smelt = 3, patrol = 0, mine = 1 },
   guard = { repair = 3, refuel = 0, turret = 2, smelt = 0, patrol = 1, mine = 0 },
   production = { repair = 0, refuel = 2, turret = 0, smelt = 1, patrol = 0, mine = 3 },
-  general = { repair = 1, refuel = 2, turret = 3, smelt = 4, patrol = 0, mine = 4 },
+  general = { repair = 1, refuel = 2, turret = 3, smelt = 4, patrol = 4, mine = 4 },
 }
 
 local ROLE_LABELS = {
@@ -683,6 +683,10 @@ local function start_custom_patrol(player)
       for i, point in ipairs(pending.points) do points[i] = { x = point.x, y = point.y } end
       local rec = companion.record(name)
       if rec then rec.saved_patrol_route = points end
+      storage.work_priorities[name] = storage.work_priorities[name] or {}
+      if not storage.work_priorities[name].patrol or storage.work_priorities[name].patrol == 0 then
+        storage.work_priorities[name].patrol = 4
+      end
       order(player, { type = "patrol", points = points }, name)
       assigned = assigned + 1
     end

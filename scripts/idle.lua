@@ -14,7 +14,7 @@ local AUTO_SMELT_RADIUS = 256
 local AUTO_SMELT_BATCH = 50
 local smelting_categories_by_item
 local WORK_ORDER = { "repair", "refuel", "turret", "smelt", "patrol", "mine" }
-local DEFAULT_PRIORITY = { repair = 1, refuel = 2, turret = 3, smelt = 4, patrol = 0, mine = 4 }
+local DEFAULT_PRIORITY = { repair = 1, refuel = 2, turret = 3, smelt = 4, patrol = 4, mine = 4 }
 
 local function work_radius(name)
   local saved = storage.work_settings and storage.work_settings[name]
@@ -213,7 +213,13 @@ function M.update()
             elseif work.key == "smelt" and assigned.smelt < 2 then
               task = autonomous_smelting_task(c, radius, center)
             elseif work.key == "patrol" and assigned.patrol < 2 then
-              task = { type = "patrol", center = center, radius = math.min(12, radius), rounds = 1 }
+              local rec = companion.record(name)
+              local saved = rec and rec.saved_patrol_route
+              if saved and #saved >= 2 then
+                local points = {}
+                for i, point in ipairs(saved) do points[i] = { x = point.x, y = point.y } end
+                task = { type = "patrol", points = points, rounds = 1 }
+              end
             elseif work.key == "mine" and assigned.mine < 2 then
               local target = random_minable(c, radius, center)
               if target then

@@ -58,6 +58,17 @@ function M.init()
     storage.migrated_quiet_idle_0152 = true
     storage.stop_old_autonomous_tasks = true
   end
+  if not storage.migrated_saved_patrol_0153 then
+    for name, rec in pairs(storage.companions) do
+      if rec.saved_patrol_route and #rec.saved_patrol_route >= 2 then
+        storage.work_priorities[name] = storage.work_priorities[name] or {}
+        if not storage.work_priorities[name].patrol or storage.work_priorities[name].patrol == 0 then
+          storage.work_priorities[name].patrol = 4
+        end
+      end
+    end
+    storage.migrated_saved_patrol_0153 = true
+  end
 end
 
 return M
