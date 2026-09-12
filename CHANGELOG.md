@@ -1,5 +1,21 @@
 # 更新日志 / Changelog
 
+## 0.14.1
+
+### 中文
+
+- 修复助手死亡事件中物品已被转入尸体时，记录到空清单而不创建拾取任务的问题。
+- 每秒保存一次助手背包、武器、弹药和护甲清单，作为死亡物品识别的可靠兜底；不会复制或生成物品。
+- 即使死亡清单为空，助手复活后也会返回死亡点检查自己的尸体和地面掉落物。
+- 到达死亡点后最多重试10秒，避免尸体生成时序或暂时背包空间不足导致只扫描一次便放弃。
+
+### English
+
+- Fixed death recovery being skipped when Factorio had already moved possessions into the corpse before the death event was read.
+- A lightweight inventory, weapon, ammunition and armor manifest is saved every second as a reliable recovery fallback; it never duplicates or creates items.
+- Even with an empty death manifest, a respawned helper returns to the death location and checks the corpse and ground drops.
+- Recovery retries for up to ten seconds at the death site instead of abandoning after one scan due to corpse timing or temporarily insufficient inventory space.
+
 ## 0.14.0
 
 ### 中文

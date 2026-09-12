@@ -85,10 +85,11 @@ script.on_nth_tick(120, function()
   companion.update_map_tag()
   companion.ensure_starter_books()
 end)
+script.on_nth_tick(60, companion.snapshot_inventories)
 script.on_nth_tick(300, idle.update)
 script.on_event(defines.events.on_tick, function()
   for _, recovery in ipairs(companion.process_respawns()) do
-    if recovery.position and next(recovery.items or {}) then
+    if recovery.position then
       companion.set_context(recovery.name)
       tasks.enqueue({
         task = {

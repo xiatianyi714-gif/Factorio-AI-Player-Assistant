@@ -84,25 +84,45 @@ function M.record(name)
   return records()[name or M.context()]
 end
 
+local function inventory_manifest(entity)
+  local items = {}
+  if not (entity and entity.valid) then return items end
+  for _, inventory_id in ipairs({
+    defines.inventory.character_main,
+    defines.inventory.character_guns,
+    defines.inventory.character_ammo,
+    defines.inventory.character_armor,
+  }) do
+    local inv = entity.get_inventory(inventory_id)
+    if inv then
+      for _, item in ipairs(inv.get_contents()) do
+        items[item.name] = (items[item.name] or 0) + item.count
+      end
+    end
+  end
+  return items
+end
+
+-- Factorio may move a dying non-player character's possessions into its
+-- corpse before on_entity_died is observed. Keep a cheap periodic manifest so
+-- death recovery still knows what belongs to this helper in that case.
+function M.snapshot_inventories()
+  for _, rec in pairs(records()) do
+    if rec.entity and rec.entity.valid then
+      rec.inventory_snapshot = inventory_manifest(rec.entity)
+    end
+  end
+end
+
 -- Remember a dead helper without copying its possessions. Factorio handles
 -- the death/corpse inventories; the replacement body therefore starts empty.
 function M.schedule_respawn(entity)
   if not entity then return nil end
   for name, rec in pairs(records()) do
     if rec.entity == entity or (rec.unit_number and rec.unit_number == entity.unit_number) then
-      local death_items = {}
-      for _, inventory_id in ipairs({
-        defines.inventory.character_main,
-        defines.inventory.character_guns,
-        defines.inventory.character_ammo,
-        defines.inventory.character_armor,
-      }) do
-        local inv = entity.get_inventory(inventory_id)
-        if inv then
-          for _, item in ipairs(inv.get_contents()) do
-            death_items[item.name] = (death_items[item.name] or 0) + item.count
-          end
-        end
+      local death_items = inventory_manifest(entity)
+      if not next(death_items) then
+        death_items = rec.inventory_snapshot or {}
       end
       rec.death_position = { x = entity.position.x, y = entity.position.y }
       rec.death_surface_index = entity.surface.index
