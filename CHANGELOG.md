@@ -1,5 +1,23 @@
 # 更新日志 / Changelog
 
+## 0.15.0
+
+### 中文
+
+- 常用页新增“一键暂停/恢复自动工作”：暂停时会结束待机调度创建的任务，但保留玩家手动命令、死亡物品找回和遭遇自卫。
+- 管理页新增设置复制：选定一名助手后，可把工作优先级、搜索半径、固定工作中心、交战策略和保存的巡逻路线复制给其他助手。
+- 新增每名助手独立的防御、均衡和积极三种交战策略，真实影响低血撤退线、无弹药判断及可承受的敌我威胁比例。
+- 状态页现在区分自动任务与手动任务，显示前往目标的大致距离，并在助手名称旁显示交战策略。
+- 所有新设置均自动兼容旧存档；没有设置过交战策略的旧助手默认使用均衡模式。
+
+### English
+
+- Added one-click Pause/Resume Automatic Work. Pausing stops idle-scheduler jobs while preserving manual orders, death recovery and emergency self-defense.
+- Added helper setting duplication for work priorities, search radius, fixed center, engagement stance and saved patrol route.
+- Added independent Defensive, Balanced and Aggressive engagement stances affecting health retreat thresholds, unarmed decisions and acceptable threat ratios.
+- Status now distinguishes automatic work, shows approximate target distance and displays each helper's engagement stance.
+- New settings migrate safely; existing helpers default to Balanced.
+
 ## 0.14.1
 
 ### 中文

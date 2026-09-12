@@ -116,6 +116,9 @@ local function make_gui(player)
   quick.add({ type = "button", name = PREFIX .. "stop", caption = T("停止命令", "Stop orders") })
   quick.add({ type = "button", name = PREFIX .. "refuel", caption = T("补齐燃料", "Refuel machines") })
   quick.add({ type = "button", name = PREFIX .. "repair", caption = T("主动维修", "Repair machines") })
+  quick.add({ type = "button", name = PREFIX .. "autonomy_pause",
+    caption = storage.autonomy_paused and T("恢复自动工作", "Resume automatic work")
+      or T("暂停自动工作", "Pause automatic work") })
 
   local work = frame.add({ type = "flow", name = PREFIX .. "work_section", direction = "vertical" })
   work.visible = false
@@ -154,6 +157,12 @@ local function make_gui(player)
   roles.add({ type = "button", name = PREFIX .. "role_guard", caption = T("守卫", "Guard") })
   roles.add({ type = "button", name = PREFIX .. "role_production", caption = T("生产助手", "Production") })
   roles.add({ type = "button", name = PREFIX .. "role_general", caption = T("全能助手", "Generalist") })
+  manage.add({ type = "label", caption = T("交战策略", "Engagement stance") })
+  manage.add({ type = "drop-down", name = PREFIX .. "engagement_stance",
+    items = { T("防御（更早撤退）", "Defensive (retreat earlier)"), T("均衡", "Balanced"), T("积极（承受更高风险）", "Aggressive (accept more risk)") },
+    selected_index = 2 })
+  manage.add({ type = "button", name = PREFIX .. "copy_settings",
+    caption = T("复制所选助手设置给其他助手", "Copy selected helper settings to others") })
   manage.add({ type = "label", caption = T("补给只使用助手背包或己方箱子的真实物品", "Supplies use only real items from companion inventories or friendly chests") })
 
   local live = frame.add({ type = "flow", name = PREFIX .. "live_section", direction = "vertical" })
@@ -434,6 +443,12 @@ local function refresh_target_selector(player)
   if selected == 1 then state.command_target = nil end
   selector.items = items
   selector.selected_index = selected
+  local stance = panel and panel[PREFIX .. "engagement_stance"]
+  if stance and stance.valid then
+    local rec = state.command_target and companion.record(state.command_target)
+    local value = rec and rec.engagement_stance or "balanced"
+    stance.selected_index = value == "defensive" and 1 or (value == "aggressive" and 3 or 2)
+  end
 end
 
 command_names = function(player)
@@ -513,6 +528,45 @@ local function apply_role(player, role)
     english() and applied or T(label[1], label[2])))
 end
 
+local function copy_selected_settings(player)
+  local gui_state = storage.local_gui[player.index]
+  local source_name = gui_state and gui_state.command_target
+  if not source_name or not companion.record(source_name) then
+    error(T("请先在顶部指令对象中选择一个助手作为设置来源", "Select one helper as the settings source first"))
+  end
+  local source_rec = companion.record(source_name)
+  local copied = 0
+  for _, who in ipairs(companion.names()) do
+    if who ~= source_name then
+      storage.work_priorities[who] = {}
+      for key, value in pairs(storage.work_priorities[source_name] or {}) do
+        storage.work_priorities[who][key] = value
+      end
+      local source_work = storage.work_settings[source_name] or {}
+      storage.work_settings[who] = {
+        radius = source_work.radius,
+        surface_index = source_work.surface_index,
+        center = source_work.center and { x = source_work.center.x, y = source_work.center.y } or nil,
+      }
+      local target_rec = companion.record(who)
+      if target_rec then
+        target_rec.engagement_stance = source_rec.engagement_stance
+        if source_rec.saved_patrol_route then
+          target_rec.saved_patrol_route = {}
+          for i, point in ipairs(source_rec.saved_patrol_route) do
+            target_rec.saved_patrol_route[i] = { x = point.x, y = point.y }
+          end
+        else
+          target_rec.saved_patrol_route = nil
+        end
+      end
+      copied = copied + 1
+    end
+  end
+  status(player, string.format(T("已把 %s 的工作、区域、战斗和巡逻设置复制给 %d 个助手",
+    "Copied %s's work, area, combat and patrol settings to %d helper(s)"), source_name, copied))
+end
+
 local TASK_NAMES = {
   walk_to = { "移动", "Moving" }, follow_player = { "跟随", "Following" },
   mine = { "采矿", "Mining" }, keep_fueled = { "补燃料", "Refueling" },
@@ -546,6 +600,11 @@ local function refresh_assistant_status(player)
     local health = c and math.floor(100 * current_health / math.max(max_health, 1)) or 0
     local items = c and c.get_main_inventory().get_item_count() or 0
     local work = active and task_name(active.type) or T("待机", "Idle")
+    if active and active.autonomous then work = T("自动：", "Auto: ") .. work end
+    if active and active.target and c then
+      local dx, dy = active.target.x - c.position.x, active.target.y - c.position.y
+      work = work .. string.format(T("（距目标%d格）", " (%d tiles away)"), math.floor(math.sqrt(dx * dx + dy * dy) + 0.5))
+    end
     if active and active.resume_type then
       work = work .. T("（之后恢复" .. task_name(active.resume_type) .. "）",
         " (then resume " .. task_name(active.resume_type) .. ")")
@@ -553,7 +612,11 @@ local function refresh_assistant_status(player)
     if active and (active.queue_length or 0) > 0 then
       work = work .. string.format(T("；排队%d", "; queued %d"), active.queue_length)
     end
-    grid.add({ type = "label", caption = who })
+    local rec = companion.record(who)
+    local stance = rec and rec.engagement_stance or "balanced"
+    local stance_label = stance == "defensive" and T("防御", "Defensive")
+      or (stance == "aggressive" and T("积极", "Aggressive") or T("均衡", "Balanced"))
+    grid.add({ type = "label", caption = who .. " · " .. stance_label })
     grid.add({ type = "label", caption = string.format(T("%s｜生命%d%%｜背包%d", "%s | HP %d%% | inventory %d"), work, health, items) })
     local last = tasks.last_result(who)
     if last and last.status == "failed" and game.tick - (last.tick or 0) < 18000 then
@@ -859,10 +922,21 @@ function M.on_gui_selection_changed(event)
     end
     return
   end
+  if element.name == PREFIX .. "engagement_stance" then
+    local keys = { "defensive", "balanced", "aggressive" }
+    local applied = 0
+    for _, who in ipairs(command_names(player)) do
+      local rec = companion.record(who)
+      if rec then rec.engagement_stance = keys[element.selected_index] or "balanced"; applied = applied + 1 end
+    end
+    status(player, string.format(T("已更新 %d 个助手的交战策略", "Updated engagement stance for %d helper(s)"), applied))
+    return
+  end
   if element.name ~= PREFIX .. "target" then return end
   storage.local_gui[player.index] = storage.local_gui[player.index] or {}
   local selected = element.get_item(element.selected_index)
   storage.local_gui[player.index].command_target = element.selected_index > 1 and selected or nil
+  refresh_target_selector(player)
   status(player, T("当前指令对象：", "Current command target: ") .. selected)
 end
 
@@ -919,6 +993,22 @@ function M.on_gui_click(event)
     local selected = command_names(player)
     for _, who in ipairs(selected) do tasks.cancel({ all = true, companion = who }) end
     status(player, T("已停止 ", "Stopped orders for ") .. command_label(player))
+    return
+  end
+  if name == PREFIX .. "autonomy_pause" then
+    storage.autonomy_paused = not storage.autonomy_paused
+    local cancelled = storage.autonomy_paused and tasks.cancel_autonomous() or 0
+    element.caption = storage.autonomy_paused and T("恢复自动工作", "Resume automatic work")
+      or T("暂停自动工作", "Pause automatic work")
+    status(player, storage.autonomy_paused
+      and string.format(T("已暂停自动工作，并停止 %d 个自动任务；手动命令和自卫仍可用",
+        "Automatic work paused; stopped %d automatic task(s). Manual orders and self-defense remain available"), cancelled)
+      or T("已恢复自动工作", "Automatic work resumed"))
+    return
+  end
+  if name == PREFIX .. "copy_settings" then
+    local ok, err = pcall(copy_selected_settings, player)
+    if not ok then status(player, T("命令失败：", "Command failed: ") .. tostring(err)) end
     return
   end
   if name == PREFIX .. "work_center_set" then

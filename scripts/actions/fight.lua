@@ -16,6 +16,11 @@ local DEFAULT_FLEE_BELOW = 0.3
 local MELEE_RANGE = 1.75
 local MELEE_DAMAGE = 8
 local MELEE_COOLDOWN = 30
+local STANCES = {
+  defensive = { flee = 0.55, threat = 1.15, unarmed = 1.0 },
+  balanced = { flee = 0.30, threat = 1.8, unarmed = 1.35 },
+  aggressive = { flee = 0.18, threat = 2.7, unarmed = 2.0 },
+}
 
 local function stop_shooting(c)
   pcall(function()
@@ -56,7 +61,10 @@ function M.start(task)
   local c = companion.require_companion()
   equipment.auto_arm(c)
   task.radius = math.min(tonumber(task.radius) or DEFAULT_RADIUS, MAX_RADIUS)
-  task.flee_below = tonumber(task.flee_below) or DEFAULT_FLEE_BELOW
+  local rec = companion.record()
+  local stance_name = rec and rec.engagement_stance or "balanced"
+  task._stance = STANCES[stance_name] or STANCES.balanced
+  task.flee_below = task._stance.flee or DEFAULT_FLEE_BELOW
   local anchor = (task.target and type(task.target.x) == "number") and task.target or c.position
   task._fight = {
     anchor = { x = anchor.x, y = anchor.y },
@@ -149,6 +157,7 @@ function M.tick(task)
     return { status = "failed", detail = "the companion character is gone" }
   end
   local f = task._fight
+  task._stance = task._stance or STANCES.balanced -- migrate an in-progress pre-0.15 fight
   equipment.auto_arm(c)
 
   -- Reassess the local battle as health, ammunition and reinforcements change.
@@ -159,8 +168,8 @@ function M.tick(task)
     f.enemy_center = center
     f.last_balance = { enemies = enemy_count, allies = ally_count, armed = armed }
     if hp < task.flee_below
-      or (enemy_count >= 2 and not armed and threat > support * 1.35)
-      or (threat > support * 1.8) then
+      or (enemy_count >= 2 and not armed and threat > support * task._stance.unarmed)
+      or (threat > support * task._stance.threat) then
       f.forced_retreat = true
     end
   end

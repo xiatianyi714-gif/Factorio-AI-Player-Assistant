@@ -5,6 +5,7 @@ local M = {}
 function M.init()
   storage.local_language = storage.local_language or "zh"
   storage.autonomy_turret_ammo_target = storage.autonomy_turret_ammo_target or 10
+  if storage.autonomy_paused == nil then storage.autonomy_paused = false end
   storage.work_priorities = storage.work_priorities or {}
   storage.work_settings = storage.work_settings or {}
   storage.work_reservations = storage.work_reservations or {}

@@ -289,13 +289,61 @@ function M.active_summary(name)
   local l = lane(name or companion.context())
   local a = l.active
   if not a then return nil end
+  local target = a._approach and a._approach.target
   return {
     id = a.id,
     type = a.type,
     status = "running",
     queue_length = #l.queue,
     resume_type = l.suspended and l.suspended.active and l.suspended.active.type or nil,
+    target = target and { x = target.x, y = target.y } or nil,
+    autonomous = a.autonomous == true,
   }
+end
+
+-- Stop only work created by the idle scheduler. Explicit player orders,
+-- emergency combat and death-item recovery remain intact.
+function M.cancel_autonomous()
+  local cancelled = 0
+  for name, l in pairs(storage.tasks.by_companion) do
+    local kept = {}
+    for _, q in ipairs(l.queue) do
+      if q.autonomous then
+        reservations.release_task(q.id)
+        storage.tasks.records[q.id] = {
+          status = "cancelled", detail = "automatic work paused", finished_tick = game.tick,
+        }
+        cancelled = cancelled + 1
+      else
+        kept[#kept + 1] = q
+      end
+    end
+    l.queue = kept
+    if l.active and l.active.autonomous then
+      companion.set_context(name)
+      finish(l.active, "cancelled", "automatic work paused")
+      cancelled = cancelled + 1
+    end
+    if l.suspended then
+      if l.suspended.active and l.suspended.active.autonomous then
+        reservations.release_task(l.suspended.active.id)
+        l.suspended.active = nil
+        cancelled = cancelled + 1
+      end
+      local suspended_kept = {}
+      for _, q in ipairs(l.suspended.queue or {}) do
+        if q.autonomous then
+          reservations.release_task(q.id)
+          cancelled = cancelled + 1
+        else
+          suspended_kept[#suspended_kept + 1] = q
+        end
+      end
+      l.suspended.queue = suspended_kept
+    end
+  end
+  companion.set_context(nil)
+  return cancelled
 end
 
 function M.last_result(name)

@@ -169,6 +169,7 @@ local function wander_task(c, center, radius)
 end
 
 function M.update()
+  if storage.autonomy_paused then return end
   local assigned = { repair = 0, refuel = 0, turret = 0, smelt = 0, mine = 0, patrol = 0 }
   -- Include autonomous work that is already running when enforcing the
   -- two-helper limit.
@@ -226,6 +227,7 @@ function M.update()
         end
         task = task or wander_task(c, center, radius)
         if task then
+          task.autonomous = true
           tasks.enqueue({ task = task, replace = false, background = true, quiet = true })
         end
       end
