@@ -1,5 +1,16 @@
 # 更新日志 / Changelog
 
+## 0.9.8 — 蓝图自主取料施工 / Autonomous Blueprint Material Retrieval
+
+- 助手施工原版蓝图虚影时，会统计尚未建造的同类建筑数量，并在施工区域 256 格内寻找存有对应材料的己方箱子。
+- While constructing native blueprint ghosts, companions count the remaining buildings of each type and search friendly chests within 256 tiles of the construction area for the required materials.
+
+- 助手会亲自走到箱子旁取走真实材料，再返回蓝图位置逐个施工；不会凭空生成物品，也不再要求箱子必须在当前伸手距离内。
+- Companions physically walk to chests, retrieve real materials, return to the blueprint, and construct it piece by piece; no items are created and chests no longer need to be within immediate reach.
+
+- 修复缺少第一件材料时直接跳过蓝图建筑、最终表现为没有建造任何东西的问题；无法到达的箱子会被跳过并继续寻找其他库存。
+- Fixed blueprint entities being immediately skipped when the first required item was missing, which could result in nothing being built; unreachable chests are skipped while other stocked chests are searched.
+
 ## 0.9.7 — 蓝图汉化与语言切换 / Blueprint Localization and Language Switching
 
 - 汉化四套内置蓝图书、嵌套分组、全部子蓝图名称及已有说明，保留作者署名、坐标和功率参数。

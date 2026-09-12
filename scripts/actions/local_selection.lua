@@ -2,6 +2,7 @@
 -- reach before reviving a ghost or mining an entity; no remote instant work.
 local companion = require("scripts.companion")
 local approach = require("scripts.actions.approach")
+local material_supply = require("scripts.actions.material_supply")
 
 local M = {}
 
@@ -19,24 +20,15 @@ local function placement_item(ghost)
   return products and products[1] and products[1].name or nil
 end
 
-local function take_from_reachable_chest(c, item_name)
-  local types = { "container", "logistic-container" }
-  for _, box in ipairs(c.surface.find_entities_filtered({
-    position = c.position,
-    radius = c.reach_distance,
-    force = c.force,
-    type = types,
-  })) do
-    local inv = box.get_inventory(defines.inventory.chest)
-    if inv and inv.get_item_count(item_name) > 0 then
-      local moved = c.get_main_inventory().insert({ name = item_name, count = 1 })
-      if moved > 0 then
-        inv.remove({ name = item_name, count = moved })
-        return true
-      end
+local function remaining_needed(task, item_name)
+  local count = 0
+  for i = task._index, #task.entities do
+    local ghost = task.entities[i]
+    if ghost and ghost.valid and ghost.type == "entity-ghost" and placement_item(ghost) == item_name then
+      count = count + 1
     end
   end
-  return false
+  return count
 end
 
 local function next_entity(task)
@@ -74,6 +66,19 @@ function M.tick(task)
     }
   end
 
+  if task.mode == "build" and e.type == "entity-ghost" then
+    local item = placement_item(e)
+    if item and c.get_item_count(item) == 0 then
+      local supplied = material_supply.ensure(task, c, item, remaining_needed(task, item), e.position)
+      if supplied == nil then return nil end
+      if supplied == "missing" then
+        task._skipped = task._skipped + 1
+        advance(task)
+        return nil
+      end
+    end
+  end
+
   local reach = task.mode == "build" and c.build_distance or c.resource_reach_distance
   local reached = approach.ensure(task, c, e.position, reach)
   if type(reached) == "table" then
@@ -95,7 +100,6 @@ function M.tick(task)
       advance(task)
       return nil
     end
-    if c.get_item_count(item) == 0 then take_from_reachable_chest(c, item) end
     if c.get_item_count(item) == 0 then
       task._skipped = task._skipped + 1
       advance(task)

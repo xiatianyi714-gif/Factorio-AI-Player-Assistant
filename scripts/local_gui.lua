@@ -956,7 +956,7 @@ local function queue_selection(player, entities, mode)
   end
   companion.set_context(nil)
   local verb = mode == "build" and "建造" or "拆除"
-  status(player, string.format("已把 %d 个目标分配给 %d 个助手；它们会逐个走近并%s", accepted, workers, verb))
+    status(player, string.format("已把 %d 个目标分配给 %d 个助手；它们会自行寻找箱中材料，逐个走近并%s", accepted, workers, verb))
 end
 
 function M.on_selected_area(event)

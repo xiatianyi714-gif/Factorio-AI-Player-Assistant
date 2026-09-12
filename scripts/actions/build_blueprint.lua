@@ -29,35 +29,6 @@ function M.start(task)
     player = task.player,
   })
 
-  -- Pull missing building items from same-force chests the helper can
-  -- physically reach. Nothing is created: every inserted item is removed
-  -- from its source chest.
-  local c = companion.require_companion()
-  local chest_types = { "container", "logistic-container" }
-  for item_name, needed in pairs(resolved.items_needed or {}) do
-    local missing = needed - c.get_item_count(item_name)
-    if missing > 0 then
-      for _, box in ipairs(c.surface.find_entities_filtered({
-        position = c.position,
-        radius = c.reach_distance,
-        force = c.force,
-        type = chest_types,
-      })) do
-        if missing <= 0 then break end
-        local inv = box.get_inventory(defines.inventory.chest)
-        if inv then
-          local available = inv.get_item_count(item_name)
-          if available > 0 then
-            local moved = c.get_main_inventory().insert({ name = item_name, count = math.min(available, missing) })
-            if moved > 0 then
-              inv.remove({ name = item_name, count = moved })
-              missing = missing - moved
-            end
-          end
-        end
-      end
-    end
-  end
   if #resolved.entities > MAX_ENTITIES then
     error(string.format(
       "'%s' has %d entities — build_blueprint takes at most %d; read it in windows and build with build_plan batches instead",
@@ -84,6 +55,8 @@ function M.start(task)
   task._placed = 0
   task._results = {}
   task._failures = {}
+  task._waiting_for_crafts = false
+  task._auto_crafted = 0
 end
 
 function M.tick(task)

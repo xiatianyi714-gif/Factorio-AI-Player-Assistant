@@ -29,6 +29,9 @@ This enhanced edition continues development from the mod code in Agentic-Factori
 - 蓝图使用原版光标放置体验，显示完整建筑虚影、可放置状态及材料需求清单。
 - Blueprints use the native cursor placement experience with full ghost previews, placement validity, and a material requirement list.
 
+- 蓝图放置后，助手会在施工区域 256 格内主动寻找存有材料的己方箱子，亲自取料、返回并逐个建造虚影。
+- After a blueprint is placed, companions search friendly chests within 256 tiles of the construction area, physically retrieve materials, return, and build each ghost.
+
 - 内置四套蓝图书及全部子蓝图均已汉化；指令面板可在中文和英文之间整体切换，切换后自动换发对应语言的蓝图。
 - All four built-in blueprint books and every nested blueprint are localized. The command panel can switch globally between Chinese and English and automatically reissues blueprints in the selected language.
 

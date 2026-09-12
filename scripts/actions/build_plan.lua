@@ -8,6 +8,7 @@
 -- half-done.
 local companion = require("scripts.companion")
 local approach = require("scripts.actions.approach")
+local material_supply = require("scripts.actions.material_supply")
 
 local M = {}
 
@@ -257,6 +258,14 @@ local function advance(task, ok, why)
   return nil
 end
 
+local function remaining_needed(task, item_name)
+  local count = 0
+  for i = task._index, #task.steps do
+    if task.steps[i].item == item_name then count = count + 1 end
+  end
+  return count
+end
+
 -- ------------------------------------------------------------------- tick
 
 function M.tick(task)
@@ -284,7 +293,11 @@ function M.tick(task)
     return advance(task, false, step.item .. " is not a placeable item")
   end
   if c.get_item_count(step.item) == 0 then
-    return advance(task, false, "I don't have any " .. step.item .. " left in my inventory")
+    local supplied = material_supply.ensure(task, c, step.item, remaining_needed(task, step.item), step.position)
+    if supplied == nil then return nil end
+    if supplied == "missing" then
+      return advance(task, false, "I don't have any " .. step.item .. " and couldn't find it in a friendly chest")
+    end
   end
 
   local reached = approach.ensure(task, c, step.position, c.build_distance)
