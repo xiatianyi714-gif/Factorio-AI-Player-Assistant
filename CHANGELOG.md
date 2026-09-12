@@ -1,5 +1,19 @@
 # 更新日志 / Changelog
 
+## 0.19.8
+
+### 中文
+
+- 生产设备投料清单明确支持添加任意多种原料，每项可单独设置、更新或删除。
+- 新增“添加当前配方全部原料”，可按当前填写的目标数量和补货比例一次登记多原料配方。
+- 逐项添加后会自动清空物品选择框，方便连续选择下一种原料。
+
+### English
+
+- Production-machine input lists now clearly support any number of independently configurable and removable ingredients.
+- Added “Add all current recipe ingredients,” using the currently entered target and refill threshold for every solid ingredient.
+- The item picker is cleared after an individual addition so the next ingredient can be selected immediately.
+
 ## 0.19.7
 
 ### 中文

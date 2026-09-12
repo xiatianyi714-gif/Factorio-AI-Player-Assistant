@@ -166,6 +166,31 @@ function M.has_rule(entity, item)
   return type(rec) == "table" and type(rec.items) == "table" and rec.items[item] ~= nil
 end
 
+-- Solid ingredients of the recipe currently selected/running on a machine.
+-- Used by the relative GUI to register multi-ingredient recipes in one click.
+function M.current_ingredients(entity)
+  if not M.supported(entity) then return {} end
+  local out, seen = {}, {}
+  local recipe
+  pcall(function() recipe = entity.get_recipe() end)
+  for _, ingredient in ipairs(recipe and recipe.ingredients or {}) do
+    if ingredient.type == "item" and not seen[ingredient.name] then
+      seen[ingredient.name] = true
+      out[#out + 1] = ingredient.name
+    end
+  end
+  if entity.type == "lab" then
+    pcall(function()
+      for _, input in pairs(entity.prototype.inputs or {}) do
+        local name = type(input) == "string" and input or input.name
+        if name and not seen[name] then seen[name] = true; out[#out + 1] = name end
+      end
+    end)
+  end
+  table.sort(out)
+  return out
+end
+
 local function has_stock(c, item, center, radius)
   if c.get_main_inventory().get_item_count(item) > 0 then return true end
   for _, box in ipairs(c.surface.find_entities_filtered({

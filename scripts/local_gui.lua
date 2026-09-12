@@ -249,7 +249,9 @@ local function make_machine_panels(player)
       anchor = { gui = spec.gui, position = defines.relative_gui_position.right },
     })
     if frame then
-      frame.add({ type = "label", caption = T("设置目标数量与补货阈值百分比", "Set target amount and refill threshold percent") })
+      frame.add({ type = "label", caption = T(
+        "可添加多种原料；设置目标数量与补货阈值百分比",
+        "Add multiple ingredients; set target amount and refill threshold percent") })
       local controls = frame.add({ type = "flow", name = PREFIX .. "machine_controls", direction = "horizontal" })
       controls.add({ type = "choose-elem-button", name = PREFIX .. "machine_item", elem_type = "item" })
       controls.add({ type = "textfield", name = PREFIX .. "machine_count", text = "50",
@@ -258,6 +260,8 @@ local function make_machine_panels(player)
         numeric = true, allow_decimal = false, allow_negative = false,
         tooltip = T("库存低于目标的此百分比时补货", "Refill below this percentage of the target") })
       controls.add({ type = "button", name = PREFIX .. "machine_add", caption = T("添加/更新", "Add/update") })
+      frame.add({ type = "button", name = PREFIX .. "machine_add_recipe",
+        caption = T("添加当前配方全部原料", "Add all current recipe ingredients") })
       frame.add({ type = "button", name = PREFIX .. "machine_output", caption = T("设置成品收纳箱", "Set output chest") })
       frame.add({ type = "label", caption = T("只服务本清单标注的设备；成品满仓后自动收纳", "Only listed machines are serviced; full outputs are stored automatically") })
       frame.add({ type = "flow", name = PREFIX .. "machine_rule_list", direction = "vertical" })
@@ -1295,11 +1299,28 @@ function M.on_gui_click(event)
       local count = math.floor(tonumber(controls[PREFIX .. "machine_count"].text) or 0)
       local threshold = math.floor(tonumber(controls[PREFIX .. "machine_threshold"].text) or 25)
       local target = machine_supply.configure(entity, item, count, threshold)
+      controls[PREFIX .. "machine_item"].elem_value = nil
       refresh_machine_panels(player)
       status(player, string.format(T(
         "已设置 %s：低于目标的 %d%% 时补回 %d 个",
         "%s: below %d%% of target, refill to %d"),
         item, math.max(0, math.min(100, threshold)), target))
+      return
+    elseif name == PREFIX .. "machine_add_recipe" then
+      local state = storage.local_gui[player.index]
+      local entity = state and state.machine_entity
+      if not machine_supply.supported(entity) then error(T("生产设备已经关闭或不存在", "The production machine is closed or gone")) end
+      local controls = element.parent[PREFIX .. "machine_controls"]
+      local count = math.max(1, math.floor(tonumber(controls[PREFIX .. "machine_count"].text) or 50))
+      local threshold = math.floor(tonumber(controls[PREFIX .. "machine_threshold"].text) or 25)
+      local ingredients = machine_supply.current_ingredients(entity)
+      if #ingredients == 0 then
+        error(T("该设备当前没有可识别的固体原料；请先选择配方，或逐项添加",
+          "No solid ingredients are currently detectable; select a recipe or add items individually"))
+      end
+      for _, item in ipairs(ingredients) do machine_supply.configure(entity, item, count, threshold) end
+      refresh_machine_panels(player)
+      status(player, string.format(T("已添加当前配方的 %d 种原料", "Added %d current-recipe ingredients"), #ingredients))
       return
     elseif name == PREFIX .. "machine_remove" then
       local state = storage.local_gui[player.index]
