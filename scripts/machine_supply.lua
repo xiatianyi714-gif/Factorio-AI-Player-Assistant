@@ -5,7 +5,6 @@ local reservations = require("scripts.reservations")
 
 local M = {}
 local CHEST_TYPES = { "container", "logistic-container" }
-local PRODUCTION_TYPES = { "furnace", "assembling-machine", "rocket-silo" }
 local category_inputs
 
 local function distance_sq(a, b)
@@ -209,6 +208,20 @@ local function output_blocked(entity, inv)
   return blocked
 end
 
+local function transferable_inventory(entity)
+  local inv
+  pcall(function() inv = entity.get_output_inventory() end)
+  if not inv and M.supported_chest(entity) then
+    pcall(function() inv = entity.get_inventory(defines.inventory.chest) end)
+  end
+  return inv
+end
+
+local function chest_accepts_item(entity, item)
+  local rec = key(entity) and chest_rules()[key(entity)]
+  return type(rec) == "table" and rec.items and rec.items[item] == true
+end
+
 local function find_carried_storage_task(c, radius, center)
   local main = c.get_main_inventory()
   local best, best_item, best_d
@@ -270,24 +283,27 @@ local function find_output_task(c, radius, center)
       only_when_full = true, one_shot = true }
   end
 
-  -- A classified chest is itself enough to enable collection. Scan nearby
-  -- production entities directly: users should not have to repeat an input
-  -- configuration on every source machine, nor wait until output is blocked.
+  -- A classified chest is the canonical destination for its listed items.
+  -- Consolidate matching items from production outputs and other nearby
+  -- chests. Never drain a chest that is itself correctly classified for that
+  -- item, preventing two valid destinations from shuttling stock forever.
   local best_route, best_route_d
   local sources = c.surface.find_entities_filtered({
-    position = center, radius = radius, force = c.force, type = PRODUCTION_TYPES,
+    position = center, radius = radius, force = c.force,
+    type = { "furnace", "assembling-machine", "rocket-silo", "container", "logistic-container" },
   })
   for _, source in ipairs(sources) do
-    local inv
-    pcall(function() inv = source.get_output_inventory() end)
+    local inv = transferable_inventory(source)
     if inv then
       local source_d = distance_sq(source.position, center)
       for _, stack in ipairs(inv.get_contents()) do
-        for chest_id, chest_rec in pairs(chest_rules()) do
+        if not (M.supported_chest(source) and chest_accepts_item(source, stack.name)) then
+          for chest_id, chest_rec in pairs(chest_rules()) do
           local destination = type(chest_rec) == "table" and chest_rec.entity
           if not (destination and destination.valid) then
             chest_rules()[chest_id] = nil
           elseif chest_rec.items and chest_rec.items[stack.name]
+              and destination ~= source
               and destination.surface == c.surface and destination.force == c.force
               and distance_sq(destination.position, center) <= radius * radius then
             local accepts = false
@@ -297,6 +313,7 @@ local function find_output_task(c, radius, center)
               best_route_d = route_d
               best_route = { source = source, destination = destination, item = stack.name }
             end
+          end
           end
         end
       end

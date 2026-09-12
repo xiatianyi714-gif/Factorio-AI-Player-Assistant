@@ -10,6 +10,9 @@ local LOCK_TICKS = 600
 local function output_inventory(source)
   local inv
   pcall(function() inv = source.get_output_inventory() end)
+  if not inv and (source.type == "container" or source.type == "logistic-container") then
+    pcall(function() inv = source.get_inventory(defines.inventory.chest) end)
+  end
   return inv
 end
 

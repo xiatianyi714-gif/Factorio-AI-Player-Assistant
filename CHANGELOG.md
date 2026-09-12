@@ -1,5 +1,21 @@
 # 更新日志 / Changelog
 
+## 0.20.0
+
+### 中文
+
+- 分类收纳规则升级为主动集中：标记箱是对应物品唯一允许的自动收纳目的地，未标记箱不会被当作目的地。
+- 待机生产助手会从工作范围内其他普通箱、物流箱、生产设备成品栏以及自身背包寻找对应物品，并真实搬运到标记箱。
+- 已经正确存放在同类标记箱中的物品不会被取走，避免多个同类箱之间反复倒腾。
+- 满箱仍会自动跳过，并改用另一个登记相同物品且有空间的箱子。
+
+### English
+
+- Classified storage now actively consolidates items: registered chests are the only automatic destinations for their listed items, while unregistered chests are never used as destinations.
+- Idle production helpers collect matching items from other nearby normal/logistic chests, production outputs, and their own inventories, then physically deliver them to a registered chest.
+- Items already stored in another correctly classified chest are left in place to prevent endless shuttling between valid destinations.
+- Full destinations are still skipped in favour of another available chest registered for the same item.
+
 ## 0.19.9
 
 ### 中文
