@@ -1,5 +1,16 @@
 # 更新日志 / Changelog
 
+## 0.9.14 — 补燃料轮巡 / Refueling Rounds
+
+- 修复发电设备燃料未完全装满时反复获得最高优先级、导致助手一直停留在同一设备旁的问题。
+- Fixed partially filled power equipment repeatedly receiving top priority and keeping a companion beside the same machine.
+
+- 每台设备成功补充或尝试处理一次后，本轮会标记为已处理；助手继续寻找其他发电设备和普通燃烧设备，完成整轮后等待 10 秒再重新巡检。
+- After one successful refill or service attempt, a machine is marked complete for the current round. The companion continues to other power and ordinary burner machines, then waits 10 seconds before starting a new round.
+
+- 发电设备仍然优先且单次尽量填满，但燃料不足时不会长期占用助手。
+- Power equipment remains prioritized and is filled as much as possible per visit, but no longer monopolizes a companion when fuel is insufficient.
+
 ## 0.9.13 — 自定义炮塔补弹 / Configurable Turret Resupply
 
 - 指令面板新增“炮塔目标弹药数量”，可在 1–1000 之间自定义；原地镇守会按此数量补充兼容弹药，不再固定为 10 发。

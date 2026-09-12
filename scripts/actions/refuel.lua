@@ -13,6 +13,7 @@ local DEFAULT_RADIUS = 256
 local MAX_RADIUS = 512
 local FUEL_CHEST_RADIUS = 96
 local SCAN_INTERVAL_TICKS = 180
+local ROUND_RESTART_TICKS = 600
 local TOP_UP_COUNT = 10
 local POWER_TYPES = { boiler = true, ["burner-generator"] = true, reactor = true }
 
@@ -125,6 +126,7 @@ function M.start(task)
     topped_up = 0,
     empty_scans = 0,
     unserviceable = {},
+    serviced_this_round = {},
   }
 end
 
@@ -154,8 +156,10 @@ function M.tick(task)
   -- Serve the current customer.
   local target = rf.target
   if target and target.valid then
+    local target_id = target.unit_number
     local fuel_left = burner_fuel_count(target)
     if fuel_left == nil or not needs_fuel(target, task) then
+      if target_id then rf.serviced_this_round[target_id] = true end
       rf.target = nil
       rf.supply = nil
       task._approach = nil
@@ -198,6 +202,7 @@ function M.tick(task)
           pcall(events.push, "supply_warning", text)
         end
         if target.unit_number then rf.unserviceable[target.unit_number] = game.tick + 3600 end
+        if target_id then rf.serviced_this_round[target_id] = true end
         rf.target = nil
         return nil
       end
@@ -224,6 +229,7 @@ function M.tick(task)
     local reached = approach.ensure(task, c, target.position, c.reach_distance)
     if type(reached) == "table" then
       -- Can't get there; skip it this round rather than killing the caretaker.
+      if target_id then rf.serviced_this_round[target_id] = true end
       rf.target = nil
       task._approach = nil
       return nil
@@ -239,6 +245,7 @@ function M.tick(task)
       c.remove_item({ name = fuel, count = inserted })
       rf.topped_up = rf.topped_up + 1
     end
+    if target_id then rf.serviced_this_round[target_id] = true end
     rf.target = nil
     rf.supply = nil
     task._approach = nil
@@ -265,8 +272,9 @@ function M.tick(task)
     if e.valid and e.type ~= "character" then
       local fuel_left = burner_fuel_count(e)
       local blocked_until = e.unit_number and rf.unserviceable[e.unit_number]
+      local serviced = e.unit_number and rf.serviced_this_round[e.unit_number]
       if fuel_left ~= nil and needs_fuel(e, task)
-        and (not blocked_until or game.tick >= blocked_until) then
+        and not serviced and (not blocked_until or game.tick >= blocked_until) then
         local d = dist_sq(e.position, c.position)
         local power = is_power_device(e)
         if not best or (power and not best_power) or (power == best_power and d < best_d) then
@@ -283,6 +291,11 @@ function M.tick(task)
     if rf.empty_scans >= task.max_empty_scans then
       return { status = "done", detail = "当前没有需要补充燃料的设备" }
     end
+  elseif next(rf.serviced_this_round) then
+    -- A completed round gets a pause before machines become eligible again.
+    -- This prevents a partially filled priority generator monopolising a helper.
+    rf.serviced_this_round = {}
+    rf.next_scan = game.tick + ROUND_RESTART_TICKS
   end
   return nil -- persistent: only cancel/replace ends this task
 end
