@@ -5,6 +5,7 @@ local tasks = require("scripts.tasks")
 local equipment = require("scripts.equipment")
 local refuel = require("scripts.actions.refuel")
 local repair = require("scripts.actions.repair")
+local turret_supply = require("scripts.actions.turret_supply")
 
 local M = {}
 local ENEMY_TYPES = { "unit", "unit-spawner", "turret" }
@@ -124,7 +125,7 @@ local function wander_task(c)
 end
 
 function M.update()
-  local assigned = { repair = 0, refuel = 0, smelt = 0, mine = 0, patrol = 0 }
+  local assigned = { repair = 0, refuel = 0, turret = 0, smelt = 0, mine = 0, patrol = 0 }
   -- Include autonomous work that is already running when enforcing the
   -- two-helper limit.
   for _, name in ipairs(companion.names()) do
@@ -132,6 +133,7 @@ function M.update()
     if active then
       if active.type == "keep_repaired" then assigned.repair = assigned.repair + 1
       elseif active.type == "keep_fueled" then assigned.refuel = assigned.refuel + 1
+      elseif active.type == "turret_supply" then assigned.turret = assigned.turret + 1
       elseif active.type == "supply_input" then assigned.smelt = assigned.smelt + 1
       elseif active.type == "mine" then assigned.mine = assigned.mine + 1
       elseif active.type == "patrol" then assigned.patrol = assigned.patrol + 1 end
@@ -157,6 +159,9 @@ function M.update()
             max_empty_scans = 1,
           }
           assigned.refuel = assigned.refuel + 1
+        elseif assigned.turret < 2 then
+          task = turret_supply.find_task(c, 256, storage.autonomy_turret_ammo_target or 10)
+          if task then assigned.turret = assigned.turret + 1 end
         elseif assigned.smelt < 2 then
           task = autonomous_smelting_task(c)
           if task then assigned.smelt = assigned.smelt + 1 end

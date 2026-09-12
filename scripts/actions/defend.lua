@@ -14,8 +14,6 @@ local DEFAULT_RADIUS = 16
 local MAX_RADIUS = 32
 local SCAN_INTERVAL_TICKS = 120
 local ENEMY_TYPES = { "unit", "unit-spawner", "turret" }
-local TURRET_LOW_AMMO = 5
-local TURRET_TOP_UP = 10
 local HEAL_PER_TICK = 3
 local HP_PER_REPAIR_PACK = 150
 
@@ -57,11 +55,18 @@ end
 
 -- First ammo item carried in the MAIN inventory (turret refills come from
 -- there, not from the character's own ammo slots).
-local function carried_ammo_item(c)
+local function carried_ammo_item(c, turret)
   for _, item in ipairs(c.get_main_inventory().get_contents()) do
     local is_ammo = false
     pcall(function() is_ammo = prototypes.item[item.name].type == "ammo" end)
-    if is_ammo then return item.name end
+    local accepted = false
+    if is_ammo then
+      pcall(function()
+        accepted = turret.get_inventory(defines.inventory.turret_ammo)
+          .can_insert({ name = item.name, count = 1 })
+      end)
+    end
+    if accepted then return item.name end
   end
   return nil
 end
@@ -82,6 +87,8 @@ function M.start(task)
   end
   local anchor = (task.center and type(task.center.x) == "number") and task.center or c.position
   task.radius = math.max(8, math.min(tonumber(task.radius) or DEFAULT_RADIUS, MAX_RADIUS))
+  task.turret_ammo_target = math.max(1,
+    math.min(math.floor(tonumber(task.turret_ammo_target) or storage.autonomy_turret_ammo_target or 10), 1000))
   task._def = {
     anchor = { x = anchor.x, y = anchor.y },
     range = gun_range(c),
@@ -143,9 +150,11 @@ local function service(task, c, def)
   if reached ~= "ok" then return true end
 
   if def.service_kind == "turret" then
-    local ammo_name = carried_ammo_item(c)
+    local ammo_name = carried_ammo_item(c, target)
     if ammo_name then
-      local n = math.min(c.get_main_inventory().get_item_count(ammo_name), TURRET_TOP_UP)
+      local current = target.get_inventory(defines.inventory.turret_ammo).get_item_count()
+      local n = math.min(c.get_main_inventory().get_item_count(ammo_name),
+        math.max(0, task.turret_ammo_target - current))
       local inserted = 0
       pcall(function() inserted = target.insert({ name = ammo_name, count = n }) end)
       if inserted > 0 then
@@ -252,7 +261,7 @@ function M.tick(task)
         local inv = t.get_inventory(defines.inventory.turret_ammo)
         if inv then count = inv.get_item_count() end
       end)
-      if count < TURRET_LOW_AMMO then
+      if count < task.turret_ammo_target then
         def.service = t
         def.service_kind = "turret"
         task._approach = nil

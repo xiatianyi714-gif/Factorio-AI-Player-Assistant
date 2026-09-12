@@ -99,6 +99,8 @@ local function make_gui(player)
   supply.add({ type = "label", caption = T("维修包可从设备附近己方箱子获取", "Repair packs may be collected from friendly chests near a machine") })
   supply.add({ type = "label", caption = T("设备燃料目标数量", "Target fuel count") })
   supply.add({ type = "textfield", name = PREFIX .. "fuel_count", text = tostring(storage.autonomy_fuel_target or 10), numeric = true, allow_decimal = false, allow_negative = false })
+  supply.add({ type = "label", caption = T("炮塔目标弹药数量", "Target turret ammunition") })
+  supply.add({ type = "textfield", name = PREFIX .. "turret_ammo_count", text = tostring(storage.autonomy_turret_ammo_target or 10), numeric = true, allow_decimal = false, allow_negative = false })
   supply.add({ type = "label", caption = T("每次投入数量", "Input amount per trip") })
   supply.add({ type = "textfield", name = PREFIX .. "supply_count", text = "50", numeric = true, allow_decimal = false, allow_negative = false })
   supply.add({ type = "label", caption = T("每采集多少去投", "Harvest amount before feeding") })
@@ -651,9 +653,13 @@ end
 
 function M.on_gui_text_changed(event)
   local element = event.element
-  if not (element and element.valid and element.name == PREFIX .. "fuel_count") then return end
+  if not (element and element.valid) then return end
   local value = math.floor(tonumber(element.text) or 10)
-  storage.autonomy_fuel_target = math.max(1, math.min(value, 1000))
+  if element.name == PREFIX .. "fuel_count" then
+    storage.autonomy_fuel_target = math.max(1, math.min(value, 1000))
+  elseif element.name == PREFIX .. "turret_ammo_count" then
+    storage.autonomy_turret_ammo_target = math.max(1, math.min(value, 1000))
+  end
 end
 
 function M.on_gui_click(event)
@@ -880,7 +886,12 @@ function M.on_gui_click(event)
       status(player, command_label(player) .. T(" 正在跟随你", " are following you"))
     elseif name == PREFIX .. "hold" then
       order_all(player, function(c)
-        return { type = "defend_area", center = { x = c.position.x, y = c.position.y }, radius = 24 }
+        return {
+          type = "defend_area",
+          center = { x = c.position.x, y = c.position.y },
+          radius = 24,
+          turret_ammo_target = storage.autonomy_turret_ammo_target or 10,
+        }
       end)
       status(player, command_label(player) .. T(" 正在原地镇守", " are holding position"))
     elseif name == PREFIX .. "patrol" then

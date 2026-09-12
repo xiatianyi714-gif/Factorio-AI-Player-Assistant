@@ -26,6 +26,9 @@ This enhanced edition continues development from the mod code in Agentic-Factori
 - 补燃料优先保障发电设备并尽量填满其燃料库存，之后再按设定数量补充普通设备。
 - Refueling prioritizes power equipment and fills its fuel inventory whenever possible before servicing ordinary machines to the configured amount.
 
+- 炮塔目标弹药数量可在面板自定义；待机助手会从背包或己方箱子取得兼容弹药并主动补充低弹药炮塔。
+- Turret ammunition targets are configurable in the panel; idle companions obtain compatible ammunition from inventories or friendly chests and resupply low-ammunition turrets.
+
 - 跟随、原地镇守、巡逻、主动清理敌人和停止命令。
 - Follow, hold position, patrol, clear nearby enemies, and stop commands.
 

@@ -1,5 +1,16 @@
 # 更新日志 / Changelog
 
+## 0.9.13 — 自定义炮塔补弹 / Configurable Turret Resupply
+
+- 指令面板新增“炮塔目标弹药数量”，可在 1–1000 之间自定义；原地镇守会按此数量补充兼容弹药，不再固定为 10 发。
+- Added a 1–1000 “Target turret ammunition” setting. Hold-position duty now supplies compatible ammunition to this target instead of a fixed 10 rounds.
+
+- 待机助手会主动扫描 256 格内缺弹的己方弹药炮塔，从自身背包或己方箱子取得兼容弹药，亲自走过去补充；最多两名助手同时补弹。
+- Idle companions scan for low-ammunition friendly turrets within 256 tiles, obtain compatible ammunition from their inventories or friendly chests, and physically resupply them, with at most two companions assigned at once.
+
+- 不会凭空生成弹药，取箱和填充均遵守助手的正常拿取距离。
+- Ammunition is never spawned, and chest pickup and turret insertion both respect normal companion reach.
+
 ## 0.9.12 — 复活后取回死亡物品 / Post-Respawn Item Recovery
 
 - 助手复活后会自动返回自己的死亡地点，从附近尸体或地面取回死亡时携带的物品，然后恢复正常待机。

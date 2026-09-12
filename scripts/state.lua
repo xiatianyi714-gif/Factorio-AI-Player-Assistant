@@ -4,6 +4,7 @@ local M = {}
 -- All fields any module needs MUST be declared here (single owner of the schema).
 function M.init()
   storage.local_language = storage.local_language or "zh"
+  storage.autonomy_turret_ammo_target = storage.autonomy_turret_ammo_target or 10
   storage.chat = storage.chat or { messages = {}, next_id = 1 }
 
   -- Tasks: one lane (queue + active) per companion.
