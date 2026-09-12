@@ -6,6 +6,7 @@ local equipment = require("scripts.equipment")
 local refuel = require("scripts.actions.refuel")
 local repair = require("scripts.actions.repair")
 local turret_supply = require("scripts.actions.turret_supply")
+local arm_self = require("scripts.actions.arm_self")
 
 local M = {}
 local ENEMY_TYPES = { "unit", "unit-spawner", "turret" }
@@ -194,9 +195,12 @@ function M.update()
         local radius = work_radius(name)
         local center = work_center(name, c)
         local enemy = nearby_enemy(c)
-        if enemy and equipment.auto_arm(c) then
+        -- Prepare before optional chores so a helper is armed when danger
+        -- arrives instead of noticing a distant supply chest too late.
+        task = arm_self.find_task(c, radius)
+        if not task and enemy and equipment.auto_arm(c) then
           task = { type = "fight", target = { x = c.position.x, y = c.position.y }, radius = 30 }
-        else
+        elseif not task then
           for _, work in ipairs(ordered_work(name)) do
             if work.key == "repair" and assigned.repair < 2 and repair.has_work(c, radius, center) then
               task = { type = "keep_repaired", center = center, radius = radius, max_empty_scans = 1 }

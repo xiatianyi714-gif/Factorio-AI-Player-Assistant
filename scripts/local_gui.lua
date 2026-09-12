@@ -576,6 +576,7 @@ local TASK_NAMES = {
   output_sort = { "收纳成品", "Storing output" }, production_chain = { "采集生产收纳", "Production chain" },
   build_blueprint = { "蓝图施工", "Building blueprint" }, local_selection = { "框选施工", "Selection work" },
   deconstruct = { "拆除", "Deconstructing" }, recover_death_items = { "取回遗物", "Recovering items" },
+  arm_self = { "准备武器", "Equipping weapon" },
 }
 
 local function task_name(kind)

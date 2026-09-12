@@ -1,5 +1,21 @@
 # 更新日志 / Changelog
 
+## 0.15.1
+
+### 中文
+
+- 修复普通待机助手只检查随身背包或伸手可及箱子、不会主动走向远处武器箱的问题。
+- 安全待机时会优先在个人工作范围内寻找包含可配套枪弹的己方箱子，亲自走过去领取并装入正确的武器与弹药槽。
+- 只领取一把所需枪械和最多一组匹配弹药，全部来自真实箱子库存，不会生成装备。
+- 自动准备武器属于可暂停的自动工作，不会打断玩家已经下达的手动任务。
+
+### English
+
+- Fixed ordinary idle helpers checking only carried items or immediately reachable chests instead of walking to a weapon supply chest.
+- While safely idle, a helper prioritizes a friendly chest within its work radius containing a usable gun/ammunition pair, walks there, and equips the correct slots.
+- It takes only one required gun and up to one matching ammunition stack from real stock; no equipment is generated.
+- Weapon preparation is pausable automatic work and never interrupts an existing manual order.
+
 ## 0.15.0
 
 ### 中文
