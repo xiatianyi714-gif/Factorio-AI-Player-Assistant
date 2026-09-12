@@ -1,5 +1,23 @@
 # 更新日志 / Changelog
 
+## 0.15.7
+
+### 中文
+
+- 将补燃料的“出发触发量”和“补齐目标量”分离，修复设备刚消耗一块燃料就再次召回助手的问题。
+- 默认只有设备库存燃料降到2个或目标数量的25%以下时才触发补给；到达后普通设备仍补到设定数量。
+- 发电设备同样只在低燃料时触发，但实际补给时仍优先处理并尽量填满燃料库存。
+- 完成一轮低燃料设备补给后，自动任务会结束并让助手执行维修、炮塔、巡逻、生产或采矿，不再长期霸占助手。
+- 批量取燃料和煤炭优先规则保持不变，所有燃料仍来自真实背包、箱子或实际采矿。
+
+### English
+
+- Separated the refuel dispatch threshold from the refill target, fixing helpers being recalled whenever a machine consumed one fuel item.
+- By default, service triggers only at two items or 25% of the configured target, while ordinary machines are still refilled to the configured amount.
+- Power equipment also triggers only when low, but remains first in priority and is filled as far as its fuel inventory permits.
+- After servicing the current low-fuel round, the automatic task ends so repair, turret, patrol, production or mining work can proceed.
+- Batch collection and coal preference remain unchanged; all fuel still comes from real inventories, chests or mining.
+
 ## 0.15.6
 
 ### 中文

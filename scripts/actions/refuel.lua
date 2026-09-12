@@ -93,12 +93,6 @@ local function is_power_device(e)
   return e and POWER_TYPES[e.type] == true
 end
 
-local function fuel_inventory_full(e)
-  local full = true
-  pcall(function() full = e.burner.inventory.is_full() end)
-  return full
-end
-
 local function desired_fuel_count(task, e, item_name)
   if not is_power_device(e) then return task.top_up_count end
   local stack_size = (prototypes.item[item_name] and prototypes.item[item_name].stack_size) or task.top_up_count
@@ -110,8 +104,9 @@ end
 local function needs_fuel(e, task)
   local count = burner_fuel_count(e)
   if count == nil then return false end
-  if is_power_device(e) then return not fuel_inventory_full(e) end
-  return count < task.top_up_count
+  -- Trigger low, refill high. Previously target_count doubled as the trigger,
+  -- so consuming a single item immediately summoned a helper again.
+  return count <= task.refill_threshold
 end
 
 -- Estimate one collection batch for every currently serviceable machine in
@@ -142,6 +137,8 @@ function M.start(task)
   local anchor = (task.center and type(task.center.x) == "number") and task.center or c.position
   task.radius = math.max(5, math.min(tonumber(task.radius) or DEFAULT_RADIUS, MAX_RADIUS))
   task.top_up_count = math.max(1, math.min(math.floor(tonumber(task.top_up_count) or TOP_UP_COUNT), 1000))
+  task.refill_threshold = math.max(0, math.floor(tonumber(task.refill_threshold)
+    or math.min(2, task.top_up_count * 0.25)))
   task.max_empty_scans = task.max_empty_scans and math.max(1, math.floor(tonumber(task.max_empty_scans))) or nil
   if task.fuel and not prototypes.item[task.fuel] then
     error("no item called '" .. task.fuel .. "'")
@@ -162,6 +159,8 @@ function M.tick(task)
   if not c then
     return { status = "failed", detail = "the companion character is gone" }
   end
+  task.refill_threshold = task.refill_threshold or math.max(0,
+    math.floor(math.min(2, (task.top_up_count or TOP_UP_COUNT) * 0.25)))
   local rf = task._rf
 
   -- If no stored fuel existed, finish a real timed coal-mining subtask before
@@ -348,7 +347,10 @@ end
 function M.has_work(c, radius, desired_count, center)
   radius = math.max(5, math.min(tonumber(radius) or DEFAULT_RADIUS, MAX_RADIUS))
   desired_count = math.max(1, math.min(math.floor(tonumber(desired_count) or TOP_UP_COUNT), 1000))
-  local probe = { top_up_count = desired_count }
+  local probe = {
+    top_up_count = desired_count,
+    refill_threshold = math.max(0, math.floor(math.min(2, desired_count * 0.25))),
+  }
   for _, e in ipairs(c.surface.find_entities_filtered({
     position = center or c.position,
     radius = radius,
