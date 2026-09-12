@@ -42,6 +42,62 @@ local function shoot_nearby_enemy(c)
   return true
 end
 
+local function nearest_enemy(surface, position, radius)
+  local best, best_d
+  for _, enemy in ipairs(surface.find_entities_filtered({
+    position = position,
+    radius = radius,
+    force = game.forces.enemy,
+    type = ENEMY_TYPES,
+  })) do
+    if enemy.valid then
+      local d = dist_sq(position, enemy.position)
+      if not best or d < best_d then best, best_d = enemy, d end
+    end
+  end
+  return best
+end
+
+-- Operate the real weapon and ammunition inventory of the player's vehicle.
+-- Prefer its currently selected loaded weapon, otherwise select another
+-- loaded slot. Factorio performs the shot and consumes vehicle ammunition.
+local function shoot_vehicle_weapon(vehicle)
+  if not (vehicle and vehicle.valid) then return false end
+  local ammo_inv
+  local ok = pcall(function() ammo_inv = vehicle.get_inventory(defines.inventory.car_ammo) end)
+  if not ok or not ammo_inv or #ammo_inv == 0 then return false end
+
+  local selected
+  pcall(function() selected = vehicle.selected_gun_index end)
+  if type(selected) ~= "number" or selected < 1 or selected > #ammo_inv
+      or not ammo_inv[selected].valid_for_read then
+    selected = nil
+    for i = 1, #ammo_inv do
+      if ammo_inv[i].valid_for_read then selected = i; break end
+    end
+  end
+  if not selected then return false end
+
+  local range = 25
+  pcall(function()
+    local gun = vehicle.prototype.guns[selected]
+    if gun and gun.attack_parameters and gun.attack_parameters.range then
+      range = gun.attack_parameters.range
+    end
+  end)
+  local enemy = nearest_enemy(vehicle.surface, vehicle.position, range)
+  if not enemy then return false end
+
+  local fired = pcall(function()
+    vehicle.selected_gun_index = selected
+    vehicle.shooting_state = {
+      state = defines.shooting.shooting_enemies,
+      position = { x = enemy.position.x, y = enemy.position.y },
+    }
+  end)
+  return fired
+end
+
 local function passenger_is(vehicle, occupant)
   local passenger
   pcall(function() passenger = vehicle.get_passenger() end)
@@ -103,7 +159,7 @@ function M.tick(task)
   -- resume the same persistent follow task on foot.
   if c.vehicle then
     if p.vehicle == c.vehicle and passenger_is(c.vehicle, c) then
-      if not shoot_nearby_enemy(c) then
+      if not shoot_vehicle_weapon(c.vehicle) and not shoot_nearby_enemy(c) then
         pcall(function() c.shooting_state = { state = defines.shooting.not_shooting } end)
       end
       return nil
@@ -113,7 +169,7 @@ function M.tick(task)
   end
 
   if p.vehicle and try_board_player_vehicle(c, p, f) then
-    if not shoot_nearby_enemy(c) then
+    if not shoot_vehicle_weapon(c.vehicle) and not shoot_nearby_enemy(c) then
       pcall(function() c.shooting_state = { state = defines.shooting.not_shooting } end)
     end
     return nil

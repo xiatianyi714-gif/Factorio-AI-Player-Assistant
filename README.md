@@ -1,6 +1,6 @@
 # 异星工厂 AI 玩家助手 / Factorio AI Player Assistant
 
-> 当前版本 / Current version: 0.18.0 — 跟随助手会自动乘坐玩家载具、同步下车并在行驶中射击。
+> 当前版本 / Current version: 0.18.1 — 玩家驾驶时，乘客助手会优先操作载具自带武器。
 
 一个完全在 Factorio 2.0 游戏内运行的多助手模组，不需要外部 AI、API、Codex 或 Token。助手像真实角色一样移动、采矿、搬运、建造和战斗，所有物品都来自实际背包、箱子或采集行为。
 
@@ -64,8 +64,8 @@ This enhanced edition continues development from the mod code in Agentic-Factori
 - 跟随、原地镇守、巡逻、主动清理敌人和停止命令。
 - Follow, hold position, patrol, clear nearby enemies, and stop commands.
 
-- 正在跟随玩家的助手会在玩家进入载具且乘客位空闲时自动上车，不会抢占驾驶位；玩家下车或更换载具时助手同步下车并继续步行跟随，行驶期间会使用自身武器攻击射程内敌人。没有空位的其他助手继续在地面跟随。
-- A companion following the player automatically boards an available passenger seat without taking the driver's seat. It exits when the player exits or changes vehicles, resumes following on foot, and fires its own weapon at enemies in range while travelling. Additional helpers continue following on foot when no seat is free.
+- 正在跟随玩家的助手会在玩家进入载具且乘客位空闲时自动上车，不会抢占驾驶位；玩家下车或更换载具时助手同步下车并继续步行跟随。玩家驾驶时，乘客助手优先选择载具中有弹药的车载武器攻击射程内敌人，车载武器不可用时才使用自身武器；所有射击消耗真实弹药。没有空位的其他助手继续在地面跟随。
+- A companion following the player automatically boards an available passenger seat without taking the driver's seat, then exits and resumes following when the player leaves or changes vehicles. While the player drives, the passenger selects a loaded vehicle weapon and attacks enemies in range, falling back to its personal weapon when vehicle armament is unavailable. Every shot consumes real ammunition. Additional helpers stay on foot when no seat is free.
 
 - 助手拥有独立背包，拿取距离、移动速度、采矿时间和拆除时间遵循原版角色规则。
 - Each companion has an independent inventory. Reach distance, movement speed, mining time, and deconstruction time follow vanilla character rules.

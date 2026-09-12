@@ -1,5 +1,23 @@
 # 更新日志 / Changelog
 
+## 0.18.1
+
+### 中文
+
+- 玩家担任驾驶员、跟随助手坐在乘客位时，助手会优先操作载具自带武器攻击附近敌人。
+- 自动检查车载弹药槽，优先使用当前有弹药的武器；当前武器空仓时可切换到另一件有弹药的车载武器。
+- 攻击距离按车载武器自身射程计算，射击由 Factorio 原生系统执行并消耗载具中的真实弹药。
+- 载具没有武器、没有车载弹药或暂时无法使用时，助手会继续使用自己的武器战斗。
+- 助手只负责瞄准射击，不会夺取驾驶位或改变玩家的油门和转向。
+
+### English
+
+- When the player drives and a follower occupies the passenger seat, the helper prioritizes the vehicle's own weapons against nearby enemies.
+- Vehicle ammunition slots are checked automatically; a loaded selected weapon is preferred, with another loaded vehicle weapon selected when necessary.
+- Detection follows the vehicle weapon's actual range, and Factorio's native shooting system consumes real ammunition from the vehicle.
+- If vehicle armament or ammunition is unavailable, the passenger falls back to its personal weapon.
+- The helper controls aiming and firing only, never taking the driver's seat or changing player steering and throttle.
+
 ## 0.18.0
 
 ### 中文
