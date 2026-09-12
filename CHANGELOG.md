@@ -1,5 +1,23 @@
 # 更新日志 / Changelog
 
+## 0.15.5
+
+### 中文
+
+- 修复维修助手只在受损设备附近96格寻找修理包、箱子较远时原地不动的问题。
+- 缺少修理包时会搜索该助手的整个个人工作区域，并亲自走到最近的己方修理包箱领取一批。
+- 无法到达的补给箱会暂时跳过并尝试其他箱子，避免对同一个封闭箱子无限寻路。
+- 如果整个工作区域确实没有修理包，自动维修会结束本轮并继续补燃料、炮塔、巡逻等后续工作，不再占住助手。
+- 手动维修仍会清楚提示缺少修理包；物品始终来自真实背包或箱子。
+
+### English
+
+- Fixed repair helpers searching only 96 tiles around the damaged machine and appearing stuck when repair-pack chests were farther away.
+- A helper without packs now searches its entire personal work area and physically visits the nearest friendly supply chest for a batch.
+- Unreachable supply chests are temporarily skipped while alternatives are tried.
+- If no repair packs exist anywhere in the work area, automatic repair ends that pass and allows refueling, turret, patrol and other work to continue.
+- Manual repair still reports missing packs clearly; every pack comes from a real inventory or chest.
+
 ## 0.15.4
 
 ### 中文
