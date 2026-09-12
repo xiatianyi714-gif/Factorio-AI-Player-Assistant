@@ -4,6 +4,7 @@ local companion = require("scripts.companion")
 local tasks = require("scripts.tasks")
 local equipment = require("scripts.equipment")
 local refuel = require("scripts.actions.refuel")
+local repair = require("scripts.actions.repair")
 
 local M = {}
 local ENEMY_TYPES = { "unit", "unit-spawner", "turret" }
@@ -44,13 +45,14 @@ local function wander_task(c)
 end
 
 function M.update()
-  local assigned = { refuel = 0, mine = 0, patrol = 0 }
+  local assigned = { repair = 0, refuel = 0, mine = 0, patrol = 0 }
   -- Include autonomous work that is already running when enforcing the
   -- two-helper limit.
   for _, name in ipairs(companion.names()) do
     local active = tasks.active_summary(name)
     if active then
-      if active.type == "keep_fueled" then assigned.refuel = assigned.refuel + 1
+      if active.type == "keep_repaired" then assigned.repair = assigned.repair + 1
+      elseif active.type == "keep_fueled" then assigned.refuel = assigned.refuel + 1
       elseif active.type == "mine" then assigned.mine = assigned.mine + 1
       elseif active.type == "patrol" then assigned.patrol = assigned.patrol + 1 end
     end
@@ -65,6 +67,9 @@ function M.update()
         local enemy = nearby_enemy(c)
         if enemy and equipment.auto_arm(c) then
           task = { type = "fight", target = { x = c.position.x, y = c.position.y }, radius = 30 }
+        elseif assigned.repair < 2 and repair.has_work(c, 256) then
+          task = { type = "keep_repaired", radius = 256, max_empty_scans = 1 }
+          assigned.repair = assigned.repair + 1
         elseif assigned.refuel < 2 and refuel.has_work(c, 256, storage.autonomy_fuel_target or 10) then
           task = {
             type = "keep_fueled", radius = 256,

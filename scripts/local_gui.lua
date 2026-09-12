@@ -15,6 +15,9 @@ local function command_speech(text)
   if string.find(text, "补齐", 1, true) or string.find(text, "补充燃料", 1, true) then
     return "去检查设备并补充燃料！"
   end
+  if string.find(text, "维修", 1, true) or string.find(text, "修理", 1, true) then
+    return "去检查并修好受损设备！"
+  end
   if string.find(text, "采集", 1, true) and string.find(text, "生产", 1, true) then
     return "开始采集、生产并收纳！"
   end
@@ -69,6 +72,8 @@ local function make_gui(player)
   supply.add({ type = "button", name = PREFIX .. "remove", caption = "减少 AI" })
   supply.add({ type = "button", name = PREFIX .. "equip", caption = "装备现有武器" })
   supply.add({ type = "button", name = PREFIX .. "refuel", caption = "补齐燃料" })
+  supply.add({ type = "button", name = PREFIX .. "repair", caption = "主动维修" })
+  supply.add({ type = "label", caption = "维修包可从设备附近己方箱子获取" })
   supply.add({ type = "label", caption = "设备燃料目标数量" })
   supply.add({ type = "textfield", name = PREFIX .. "fuel_count", text = tostring(storage.autonomy_fuel_target or 10), numeric = true, allow_decimal = false, allow_negative = false })
   supply.add({ type = "label", caption = "每次投入数量" })
@@ -818,6 +823,15 @@ function M.on_gui_click(event)
         }
       end)
       status(player, "正在补齐附近设备；可从助手背包或附近己方箱子取燃料")
+    elseif name == PREFIX .. "repair" then
+      order_all(player, function(c)
+        return {
+          type = "keep_repaired",
+          center = { x = c.position.x, y = c.position.y },
+          radius = 256,
+        }
+      end)
+      status(player, command_label(player) .. " 正在寻找并维修受损设备；没有修理包时会从设备附近己方箱子取")
     elseif name == PREFIX .. "follow" then
       order_all(player, function() return { type = "follow_player", player = player.name, distance = 3 } end)
       status(player, command_label(player) .. " 正在跟随你")

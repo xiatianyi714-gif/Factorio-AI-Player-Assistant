@@ -38,6 +38,9 @@ This enhanced edition continues development from the mod code in Agentic-Factori
 - 自动检查燃料目标数量，依次给多个设备补充；背包和箱子没有燃料时会寻找煤矿并实际开采。
 - Automatically checks target fuel levels and services multiple machines; when neither inventories nor chests contain fuel, the companion finds and physically mines coal.
 
+- 主动寻找受损的己方设备并连续维修；优先使用助手背包里的修理包，没有时会走到设备附近的己方箱子取用，绝不凭空生成。
+- Actively finds and repairs damaged friendly machines; it first uses repair packs in its own inventory, otherwise walks to a friendly chest near the machine, and never creates packs from nothing.
+
 - 受到攻击时根据血量、武器弹药、敌人数和附近友方力量决定反击或撤退，战斗结束后恢复原任务。
 - When attacked, companions decide whether to fight or retreat based on health, weapons, ammunition, enemy count, and nearby allied strength, then resume the previous task.
 
@@ -46,11 +49,11 @@ This enhanced edition continues development from the mod code in Agentic-Factori
 
 ## 安装方法 / Installation
 
-1. 下载发布页面中的 `agentic-companion_0.9.5.zip`。
+1. 下载发布页面中的 `agentic-companion_0.9.6.zip`。
 2. 将 ZIP 放入 Factorio 的 `mods` 文件夹，不要解压。
 3. 完全退出并重新启动 Factorio，然后启用模组并载入存档。
 
-1. Download `agentic-companion_0.9.5.zip` from the Releases page.
+1. Download `agentic-companion_0.9.6.zip` from the Releases page.
 2. Place the ZIP in Factorio's `mods` folder without extracting it.
 3. Fully restart Factorio, enable the mod, and load your save.
 

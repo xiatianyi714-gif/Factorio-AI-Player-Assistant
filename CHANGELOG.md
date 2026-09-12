@@ -1,5 +1,19 @@
 # 更新日志 / Changelog
 
+## 0.9.6 — 主动维修 / Autonomous Repairs
+
+- 新增“主动维修”按钮，可向全部助手或单个助手下达持续维修命令。
+- Added an “Autonomous Repairs” button for persistent maintenance by all companions or one selected companion.
+
+- 助手会寻找受损的己方设备并亲自走到设备旁维修，完成一台后继续寻找下一台。
+- Companions find damaged friendly machines, walk into reach, repair them, and continue to the next machine.
+
+- 优先消耗助手背包中的真实修理包；没有时会到受损设备附近的己方箱子取用，不会凭空生成。
+- Real repair packs are consumed from the companion's inventory; when empty, it retrieves packs from a friendly chest near the damaged machine and never creates them from nothing.
+
+- 空闲助手会优先处理受损设备，同一自主维修工作最多分配两名助手。
+- Idle companions prioritize damaged machines, with at most two helpers assigned to autonomous repair work.
+
 ## 0.9.5 — 安全采矿与自主燃料获取 / Safe Mining and Autonomous Fuel Acquisition
 
 - 采矿前验证目标，跳过被己方建筑覆盖的矿点，避免误拆玩家建筑。
