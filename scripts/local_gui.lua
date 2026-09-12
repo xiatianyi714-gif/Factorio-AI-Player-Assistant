@@ -120,6 +120,9 @@ local function make_gui(player)
   local work = frame.add({ type = "flow", name = PREFIX .. "work_section", direction = "vertical" })
   work.visible = false
   work.add({ type = "button", name = PREFIX .. "priorities", caption = T("各助手工作优先级与范围", "Companion priorities and range") })
+  local area_buttons = work.add({ type = "table", column_count = 2 })
+  area_buttons.add({ type = "button", name = PREFIX .. "work_center_set", caption = T("设置工作中心", "Set work center") })
+  area_buttons.add({ type = "button", name = PREFIX .. "work_center_clear", caption = T("清除固定区域", "Clear fixed area") })
   local supply = work.add({ type = "table", name = PREFIX .. "supply_controls", column_count = 2 })
   supply.add({ type = "label", caption = T("设备燃料目标数量", "Target fuel count") })
   supply.add({ type = "textfield", name = PREFIX .. "fuel_count", text = tostring(storage.autonomy_fuel_target or 10), numeric = true, allow_decimal = false, allow_negative = false })
@@ -144,12 +147,22 @@ local function make_gui(player)
   manage_buttons.add({ type = "button", name = PREFIX .. "spawn", caption = T("增加 AI", "Add AI") })
   manage_buttons.add({ type = "button", name = PREFIX .. "remove", caption = T("减少 AI", "Remove AI") })
   manage_buttons.add({ type = "button", name = PREFIX .. "equip", caption = T("装备现有武器", "Equip weapons") })
+  manage.add({ type = "label", caption = T("一键职业模板（应用到当前指令对象）", "One-click roles (applied to command target)") })
+  local roles = manage.add({ type = "table", column_count = 2 })
+  roles.add({ type = "button", name = PREFIX .. "role_maintenance", caption = T("维护员", "Maintainer") })
+  roles.add({ type = "button", name = PREFIX .. "role_miner", caption = T("矿工", "Miner") })
+  roles.add({ type = "button", name = PREFIX .. "role_guard", caption = T("守卫", "Guard") })
+  roles.add({ type = "button", name = PREFIX .. "role_production", caption = T("生产助手", "Production") })
+  roles.add({ type = "button", name = PREFIX .. "role_general", caption = T("全能助手", "Generalist") })
   manage.add({ type = "label", caption = T("补给只使用助手背包或己方箱子的真实物品", "Supplies use only real items from companion inventories or friendly chests") })
 
   local live = frame.add({ type = "flow", name = PREFIX .. "live_section", direction = "vertical" })
   live.visible = false
   live.add({ type = "label", caption = T("助手实时状态", "Live companion status") })
   live.add({ type = "table", name = PREFIX .. "assistant_status", column_count = 2 })
+  local live_actions = live.add({ type = "table", column_count = 2 })
+  live_actions.add({ type = "button", name = PREFIX .. "locate", caption = T("定位所选助手", "Locate selected") })
+  live_actions.add({ type = "button", name = PREFIX .. "stop_selected", caption = T("停止所选助手", "Stop selected") })
   frame.add({ type = "label", name = PREFIX .. "status", caption = T("就绪", "Ready") })
 end
 
@@ -469,6 +482,36 @@ local WORK_TYPES = {
   { key = "patrol", zh = "巡逻", en = "Patrol", default = 4 },
   { key = "mine", zh = "采矿", en = "Mining", default = 4 },
 }
+
+local ROLE_PRIORITIES = {
+  maintenance = { repair = 1, refuel = 1, turret = 2, smelt = 3, patrol = 0, mine = 0 },
+  miner = { repair = 0, refuel = 0, turret = 0, smelt = 3, patrol = 0, mine = 1 },
+  guard = { repair = 3, refuel = 0, turret = 2, smelt = 0, patrol = 1, mine = 0 },
+  production = { repair = 0, refuel = 2, turret = 0, smelt = 1, patrol = 0, mine = 3 },
+  general = { repair = 1, refuel = 2, turret = 3, smelt = 4, patrol = 4, mine = 4 },
+}
+
+local ROLE_LABELS = {
+  maintenance = { "维护员", "Maintainer" }, miner = { "矿工", "Miner" },
+  guard = { "守卫", "Guard" }, production = { "生产助手", "Production" },
+  general = { "全能助手", "Generalist" },
+}
+
+local function apply_role(player, role)
+  local preset = ROLE_PRIORITIES[role]
+  if not preset then error("未知职业模板") end
+  storage.work_priorities = storage.work_priorities or {}
+  local applied = 0
+  for _, who in ipairs(command_names(player)) do
+    storage.work_priorities[who] = {}
+    for key, value in pairs(preset) do storage.work_priorities[who][key] = value end
+    applied = applied + 1
+  end
+  local label = ROLE_LABELS[role]
+  status(player, string.format(T("已将 %d 个助手设为%s", "Applied %s role to %d companion(s)"),
+    english() and T(label[1], label[2]) or applied,
+    english() and applied or T(label[1], label[2])))
+end
 
 local TASK_NAMES = {
   walk_to = { "移动", "Moving" }, follow_player = { "跟随", "Following" },
@@ -854,6 +897,49 @@ function M.on_gui_click(event)
     if section == "live" then pcall(refresh_assistant_status, player) end
     return
   end
+  local role = string.match(name, "^" .. PREFIX .. "role_(%a+)$")
+  if role then
+    local ok, err = pcall(apply_role, player, role)
+    if not ok then status(player, T("命令失败：", "Command failed: ") .. tostring(err)) end
+    return
+  end
+  if name == PREFIX .. "locate" then
+    local found = 0
+    for _, who in ipairs(command_names(player)) do
+      local c = companion.get(who)
+      if c then
+        player.print(string.format("%s [gps=%.1f,%.1f,%s]", who, c.position.x, c.position.y, c.surface.name))
+        found = found + 1
+      end
+    end
+    status(player, string.format(T("已在聊天栏发送 %d 个助手的位置", "Sent %d companion location(s) to chat"), found))
+    return
+  end
+  if name == PREFIX .. "stop_selected" then
+    local selected = command_names(player)
+    for _, who in ipairs(selected) do tasks.cancel({ all = true, companion = who }) end
+    status(player, T("已停止 ", "Stopped orders for ") .. command_label(player))
+    return
+  end
+  if name == PREFIX .. "work_center_set" then
+    storage.local_gui[player.index].pending_work_center = { companions = command_names(player) }
+    player.clear_cursor()
+    player.cursor_stack.set_stack({ name = "agentic-local-work-center-tool", count = 1 })
+    status(player, T("请在地图上框选工作区域的中心；范围大小使用各助手的搜索半径", "Select the center of the work area; its size uses each companion's search radius"))
+    return
+  end
+  if name == PREFIX .. "work_center_clear" then
+    storage.work_settings = storage.work_settings or {}
+    local cleared = 0
+    for _, who in ipairs(command_names(player)) do
+      storage.work_settings[who] = storage.work_settings[who] or {}
+      storage.work_settings[who].center = nil
+      storage.work_settings[who].surface_index = nil
+      cleared = cleared + 1
+    end
+    status(player, string.format(T("已为 %d 个助手清除固定工作区域", "Cleared fixed work areas for %d companion(s)"), cleared))
+    return
+  end
   if name == PREFIX .. "language" then
     storage.local_language = english() and "zh" or "en"
     for _, who in ipairs(companion.names()) do
@@ -1195,7 +1281,27 @@ end
 function M.on_selected_area(event)
   local player = game.get_player(event.player_index)
   if not player then return end
-  if event.item == "agentic-local-patrol-route-tool" then
+  if event.item == "agentic-local-work-center-tool" then
+    local state = storage.local_gui[player.index]
+    local pending = state and state.pending_work_center
+    if not pending then player.clear_cursor(); return end
+    local area = event.area
+    local center = {
+      x = (area.left_top.x + area.right_bottom.x) / 2,
+      y = (area.left_top.y + area.right_bottom.y) / 2,
+    }
+    storage.work_settings = storage.work_settings or {}
+    local applied = 0
+    for _, who in ipairs(pending.companions or {}) do
+      storage.work_settings[who] = storage.work_settings[who] or {}
+      storage.work_settings[who].center = { x = center.x, y = center.y }
+      storage.work_settings[who].surface_index = player.surface.index
+      applied = applied + 1
+    end
+    state.pending_work_center = nil
+    player.clear_cursor()
+    status(player, string.format(T("已为 %d 个助手设置固定工作中心", "Set fixed work centers for %d companion(s)"), applied))
+  elseif event.item == "agentic-local-patrol-route-tool" then
     local state = storage.local_gui[player.index]
     local pending = state and state.pending_patrol
     if not pending then

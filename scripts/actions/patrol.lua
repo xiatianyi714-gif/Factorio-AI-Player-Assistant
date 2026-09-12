@@ -64,7 +64,8 @@ function M.start(task)
     local names, index = companion.names(), 1
     for i, name in ipairs(names) do if name == companion.context() then index = i break end end
     local phase = (index - 1) * math.pi / 2
-    local x, y = c.position.x, c.position.y
+    local center = task.center or c.position
+    local x, y = center.x, center.y
     for i = 0, 3 do
       local angle = phase + i * math.pi / 2
       points[#points + 1] = safe_point(c, { x = x + math.cos(angle) * r, y = y + math.sin(angle) * r })

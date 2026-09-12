@@ -163,7 +163,7 @@ function M.tick(task)
 
   local best, best_d
   for _, entity in ipairs(c.surface.find_entities_filtered({
-    position = c.position,
+    position = state.anchor,
     radius = task.radius,
     force = c.force,
   })) do
@@ -185,10 +185,10 @@ function M.tick(task)
   return nil
 end
 
-function M.has_work(c, radius)
+function M.has_work(c, radius, center)
   radius = math.max(8, math.min(tonumber(radius) or DEFAULT_RADIUS, MAX_RADIUS))
   for _, entity in ipairs(c.surface.find_entities_filtered({
-    position = c.position,
+    position = center or c.position,
     radius = radius,
     force = c.force,
   })) do

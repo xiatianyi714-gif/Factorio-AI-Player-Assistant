@@ -119,7 +119,7 @@ end
 local function batch_fuel_need(c, task, item_name)
   local total = 0
   for _, e in ipairs(c.surface.find_entities_filtered({
-    position = c.position,
+    position = task._rf and task._rf.anchor or c.position,
     radius = task.radius,
     force = c.force,
   })) do
@@ -295,7 +295,7 @@ function M.tick(task)
   for _, e in ipairs(c.surface.find_entities_filtered({
     -- Search from the helper's current position so the caretaker can keep
     -- discovering new machines as it travels through the factory.
-    position = c.position,
+    position = rf.anchor,
     radius = task.radius,
     force = c.force,
   })) do
@@ -332,12 +332,12 @@ end
 
 -- Cheap pre-check used by autonomous scheduling so an idle helper does not
 -- enter a persistent refuel task when there is no refuelling work at all.
-function M.has_work(c, radius, desired_count)
+function M.has_work(c, radius, desired_count, center)
   radius = math.max(5, math.min(tonumber(radius) or DEFAULT_RADIUS, MAX_RADIUS))
   desired_count = math.max(1, math.min(math.floor(tonumber(desired_count) or TOP_UP_COUNT), 1000))
   local probe = { top_up_count = desired_count }
   for _, e in ipairs(c.surface.find_entities_filtered({
-    position = c.position,
+    position = center or c.position,
     radius = radius,
     force = c.force,
   })) do

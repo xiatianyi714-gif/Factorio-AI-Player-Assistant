@@ -139,4 +139,14 @@ data:extend({
     select = { border_color = { r = 0.2, g = 1, b = 0.4 }, mode = { "any-entity" }, cursor_box_type = "copy" },
     alt_select = { border_color = { r = 0.2, g = 1, b = 0.4 }, mode = { "any-entity" }, cursor_box_type = "copy" },
   },
+  {
+    type = "selection-tool",
+    name = "agentic-local-work-center-tool",
+    icon = "__base__/graphics/icons/radar.png",
+    icon_size = 64,
+    flags = { "only-in-cursor", "not-stackable", "spawnable" },
+    subgroup = "tool", order = "c[automated-construction]-z[work-center]", stack_size = 1,
+    select = { border_color = { r = 0.3, g = 1, b = 0.6 }, mode = { "any-tile" }, cursor_box_type = "copy" },
+    alt_select = { border_color = { r = 0.3, g = 1, b = 0.6 }, mode = { "any-tile" }, cursor_box_type = "copy" },
+  },
 })

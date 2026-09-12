@@ -20,6 +20,14 @@ local function work_radius(name)
   return math.max(32, math.min(512, math.floor(tonumber(saved and saved.radius) or 256)))
 end
 
+local function work_center(name, c)
+  local saved = storage.work_settings and storage.work_settings[name]
+  if saved and saved.center and (not saved.surface_index or saved.surface_index == c.surface.index) then
+    return { x = saved.center.x, y = saved.center.y }
+  end
+  return { x = c.position.x, y = c.position.y }
+end
+
 local function priority(name, work)
   local saved = storage.work_priorities and storage.work_priorities[name]
   local value = saved and saved[work]
@@ -63,13 +71,13 @@ local function smelting_items()
   return smelting_categories_by_item
 end
 
-local function autonomous_smelting_task(c, radius)
+local function autonomous_smelting_task(c, radius, center)
   local available = {}
   for _, stack in ipairs(c.get_main_inventory().get_contents()) do
     available[stack.name] = (available[stack.name] or 0) + stack.count
   end
   for _, box in ipairs(c.surface.find_entities_filtered({
-    position = c.position,
+    position = center or c.position,
     radius = radius or AUTO_SMELT_RADIUS,
     force = c.force,
     type = { "container", "logistic-container" },
@@ -84,7 +92,7 @@ local function autonomous_smelting_task(c, radius)
   if not next(available) then return nil end
   local candidates = smelting_items()
   local furnaces = c.surface.find_entities_filtered({
-    position = c.position,
+    position = center or c.position,
     radius = radius or AUTO_SMELT_RADIUS,
     force = c.force,
     type = "furnace",
@@ -123,10 +131,10 @@ local function autonomous_smelting_task(c, radius)
   }
 end
 
-local function random_minable(c, radius)
+local function random_minable(c, radius, center)
   local list = {}
   for _, e in ipairs(c.surface.find_entities_filtered({
-    position = c.position,
+    position = center or c.position,
     radius = math.min(tonumber(radius) or 20, 64),
     type = { "resource", "tree", "simple-entity" },
   })) do
@@ -146,12 +154,14 @@ local function nearby_enemy(c)
   })[1]
 end
 
-local function wander_task(c)
+local function wander_task(c, center, radius)
   local angle = math.random() * math.pi * 2
   local distance = math.random(8, 20)
+  local origin = center or c.position
+  distance = math.min(distance, math.max(4, tonumber(radius) or distance))
   local desired = {
-    x = c.position.x + math.cos(angle) * distance,
-    y = c.position.y + math.sin(angle) * distance,
+    x = origin.x + math.cos(angle) * distance,
+    y = origin.y + math.sin(angle) * distance,
   }
   local target = c.surface.find_non_colliding_position("character", desired, 10, 0.5)
   if not target then return nil end
@@ -181,28 +191,30 @@ function M.update()
       if c then
         local task
         local radius = work_radius(name)
+        local center = work_center(name, c)
         local enemy = nearby_enemy(c)
         if enemy and equipment.auto_arm(c) then
           task = { type = "fight", target = { x = c.position.x, y = c.position.y }, radius = 30 }
         else
           for _, work in ipairs(ordered_work(name)) do
-            if work.key == "repair" and assigned.repair < 2 and repair.has_work(c, radius) then
-              task = { type = "keep_repaired", radius = radius, max_empty_scans = 1 }
+            if work.key == "repair" and assigned.repair < 2 and repair.has_work(c, radius, center) then
+              task = { type = "keep_repaired", center = center, radius = radius, max_empty_scans = 1 }
             elseif work.key == "refuel" and assigned.refuel < 2
-                and refuel.has_work(c, radius, storage.autonomy_fuel_target or 10) then
-              task = { type = "keep_fueled", radius = radius,
+                and refuel.has_work(c, radius, storage.autonomy_fuel_target or 10, center) then
+              task = { type = "keep_fueled", center = center, radius = radius,
                 top_up_count = storage.autonomy_fuel_target or 10, max_empty_scans = 1 }
             elseif work.key == "turret" and assigned.turret < 2 then
-              task = turret_supply.find_task(c, radius, storage.autonomy_turret_ammo_target or 10)
+              task = turret_supply.find_task(c, radius, storage.autonomy_turret_ammo_target or 10, center)
             elseif work.key == "smelt" and assigned.smelt < 2 then
-              task = autonomous_smelting_task(c, radius)
+              task = autonomous_smelting_task(c, radius, center)
             elseif work.key == "patrol" and assigned.patrol < 2 then
-              task = { type = "patrol", radius = 12, rounds = 1 }
+              task = { type = "patrol", center = center, radius = math.min(12, radius), rounds = 1 }
             elseif work.key == "mine" and assigned.mine < 2 then
-              local target = random_minable(c, radius)
+              local target = random_minable(c, radius, center)
               if target then
                 task = target.type == "resource"
-                  and { type = "mine", resource = target.name, count = 20 }
+                  and { type = "mine", resource = target.name, count = 20,
+                    search_center = center, search_radius = radius }
                   or { type = "mine", target = { x = target.position.x, y = target.position.y } }
               end
             end
@@ -212,7 +224,7 @@ function M.update()
             end
           end
         end
-        task = task or wander_task(c)
+        task = task or wander_task(c, center, radius)
         if task then
           tasks.enqueue({ task = task, replace = false, background = true, quiet = true })
         end

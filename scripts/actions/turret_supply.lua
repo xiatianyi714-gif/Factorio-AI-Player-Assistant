@@ -48,12 +48,12 @@ local function turret_count(turret)
   return inv and inv.get_item_count() or 0
 end
 
-function M.find_task(c, radius, target_count)
+function M.find_task(c, radius, target_count, center)
   radius = math.max(8, math.min(math.floor(tonumber(radius) or DEFAULT_RADIUS), 512))
   target_count = math.max(1, math.min(math.floor(tonumber(target_count) or 10), 1000))
   local best, best_item, best_distance
   for _, turret in ipairs(c.surface.find_entities_filtered({
-    position = c.position, radius = radius, force = c.force, type = "ammo-turret",
+    position = center or c.position, radius = radius, force = c.force, type = "ammo-turret",
   })) do
     if turret.valid and turret_count(turret) < target_count then
       local item = carried_ammo(c, turret) or stored_ammo(c, turret, radius)

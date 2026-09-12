@@ -1,5 +1,23 @@
 # 更新日志 / Changelog
 
+## 0.12.0
+
+### 中文
+
+- 管理页新增维护员、矿工、守卫、生产助手和全能助手五种一键职业模板，自动配置当前所选助手的自主工作优先级及关闭项。
+- 职业模板可应用到单个助手或全部助手，应用后仍可在“工作优先级”中逐项修改。
+- 状态页新增“定位所选助手”，在聊天栏生成可点击的地图坐标。
+- 状态页新增“停止所选助手”，无需切回常用页即可立即取消其当前任务和队列。
+- 工作页新增固定工作中心：框选中心后，个人搜索半径会围绕该位置约束维修、燃料、炮塔、生产、采矿、待机巡逻与闲逛；可一键清除并恢复跟随助手位置。
+
+### English
+
+- Added five one-click roles to Manage: Maintainer, Miner, Guard, Production and Generalist, configuring autonomous priorities and disabled work for the selected companions.
+- Roles apply to one or all companions and remain fully editable in Work Priorities.
+- Added Locate Selected to Status, producing clickable map coordinates in chat.
+- Added Stop Selected to Status, immediately cancelling current and queued work without switching pages.
+- Added fixed work centers: the personal radius constrains repair, fuel, turrets, production, mining, idle patrol and wandering around the selected center, and can be cleared with one click.
+
 ## 0.11.0
 
 ### 中文

@@ -163,7 +163,7 @@ end
 
 -- ------------------------------------------------------------- composite
 
-local function find_nearest_match(c, matcher, blocked)
+local function find_nearest_match(c, matcher, blocked, center, radius)
   -- Search the whole generated surface. This lets the helper find and walk
   -- to known ore patches without generating unexplored chunks or revealing
   -- hidden terrain.
@@ -172,6 +172,10 @@ local function find_nearest_match(c, matcher, blocked)
     filter.name = matcher.name
   else
     filter.type = matcher.type
+  end
+  if center and radius then
+    filter.position = center
+    filter.radius = radius
   end
   local candidates = c.surface.find_entities_filtered(filter)
   local best, best_d
@@ -224,7 +228,7 @@ local function tick_composite(task, c)
   local m = task._mine
   local e = task._entity
   if not (e and e.valid) then
-    e = find_nearest_match(c, m.matcher, m.blocked)
+    e = find_nearest_match(c, m.matcher, m.blocked, task.search_center, task.search_radius)
     task._entity = e
     task._approach = nil
     m.remaining = nil
