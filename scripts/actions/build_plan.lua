@@ -105,6 +105,10 @@ function M.start(task)
     end
   end
   task._waiting_for_crafts = task._auto_crafted > 0
+  task._blueprint_needed = {}
+  for _, step in ipairs(task.steps) do
+    task._blueprint_needed[step.item] = (task._blueprint_needed[step.item] or 0) + 1
+  end
 
   task.stop_on_error = task.stop_on_error == true
   task._index = 1
@@ -277,6 +281,16 @@ function M.tick(task)
   if task._waiting_for_crafts then
     if c.crafting_queue_size > 0 then return nil end
     task._waiting_for_crafts = false
+  end
+
+  if not task._prefetch_done then
+    local first = task.steps[task._index]
+    if first then
+      local result = material_supply.prefetch(task, c, task._blueprint_needed, first.position)
+      if result ~= "done" then return nil end
+    end
+    task._prefetch_done = true
+    task._approach = nil
   end
 
   local step = task.steps[task._index]

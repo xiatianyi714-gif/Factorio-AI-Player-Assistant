@@ -52,11 +52,29 @@ function M.start(task)
   if task.mode ~= "build" and task.mode ~= "demolish" then error("invalid local selection mode") end
   if type(task.entities) ~= "table" or #task.entities == 0 then error("selection contains no targets") end
   task._index, task._done, task._skipped = 1, 0, 0
+  if task.mode == "build" then
+    task._blueprint_needed = {}
+    for _, ghost in ipairs(task.entities) do
+      if ghost and ghost.valid and ghost.type == "entity-ghost" then
+        local item = placement_item(ghost)
+        if item then task._blueprint_needed[item] = (task._blueprint_needed[item] or 0) + 1 end
+      end
+    end
+  end
 end
 
 function M.tick(task)
   local c = companion.get()
   if not c then return { status = "failed", detail = "the companion character is gone" } end
+  if task.mode == "build" and not task._prefetch_done then
+    local first = next_entity(task)
+    if not first then task._prefetch_done = true else
+      local result = material_supply.prefetch(task, c, task._blueprint_needed, first.position)
+      if result ~= "done" then return nil end
+      task._prefetch_done = true
+      task._approach = nil
+    end
+  end
   local e = next_entity(task)
   if not e then
     c.mining_state = { mining = false }

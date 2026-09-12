@@ -1,5 +1,21 @@
 # 更新日志 / Changelog
 
+## 0.19.3
+
+### 中文
+
+- 蓝图施工开始前，每名助手会汇总自己负责的全部幽灵建筑，并在每个材料箱前一次领取其中所有需要的物品，直到背包装满或需求满足。
+- 保留缺料时的途中补取机制，但不再默认每建几个建筑就单独返回箱子。
+- 修复蓝图预览的临时光标副本在切换工具时被放入玩家背包，导致每次施工凭空多出一份蓝图的问题。
+- 蓝图材料清单移动到小地图下方的右侧常驻区域；关闭后可通过工作页的“查看蓝图材料”随时重新打开。
+
+### English
+
+- Before blueprint construction, each helper totals all assigned ghosts and collects every needed item available at each material chest until its real inventory is full or the demand is met.
+- On-demand collection remains as a fallback for later shortages, without defaulting to a separate chest trip every few entities.
+- Fixed the temporary cursor preview blueprint being returned to the player inventory when tools changed, which duplicated one blueprint per build.
+- Moved the blueprint bill of materials to the persistent right-side area below the minimap and added a Work-page button to reopen the latest list.
+
 ## 0.19.2
 
 ### 中文

@@ -47,6 +47,7 @@ function M.start(task)
   end
   task.steps = steps
   task.label = resolved.label
+  task._blueprint_needed = resolved.items_needed
   task._skipped = (#resolved.skipped > 0) and table.concat(resolved.skipped, ", ") or nil
 
   -- Same init contract as build_plan.start (its tick drives the task).

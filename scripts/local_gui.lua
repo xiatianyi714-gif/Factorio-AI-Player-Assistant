@@ -150,6 +150,7 @@ local function make_gui(player)
   build.add({ type = "button", name = PREFIX .. "demolish", caption = T("框选拆除", "Deconstruct selection") })
   build.add({ type = "button", name = PREFIX .. "mine_supply", caption = T("采集·生产·收纳", "Mine · Produce · Store") })
   build.add({ type = "button", name = PREFIX .. "blueprints", caption = T("蓝图施工", "Blueprint construction") })
+  build.add({ type = "button", name = PREFIX .. "blueprint_materials_show", caption = T("查看蓝图材料", "Blueprint materials") })
 
   local manage = frame.add({ type = "flow", name = PREFIX .. "manage_section", direction = "vertical" })
   manage.visible = false
@@ -253,13 +254,23 @@ end
 
 local function show_blueprint_materials(player, info)
   close_blueprint_materials(player)
+  storage.local_gui[player.index] = storage.local_gui[player.index] or {}
+  storage.local_gui[player.index].last_blueprint_materials = {
+    label = info.label, items_needed = info.items_needed, entity_count = info.entity_count,
+  }
   local frame = player.gui.screen.add({
     type = "frame", name = PREFIX .. "blueprint_materials",
     caption = info.label .. T("：施工材料", ": Construction Materials"), direction = "vertical",
   })
-  frame.auto_center = true
+  local scale = 1
+  pcall(function() scale = tonumber(player.display_scale) or 1 end)
+  local logical_width = player.display_resolution.width / math.max(0.5, scale)
+  frame.location = { x = math.max(0, math.floor(logical_width - 330)), y = 310 }
   frame.add({ type = "label", caption = T("建筑虚影：", "Ghost entities: ") .. tostring(info.entity_count) .. T(" 个", "") })
-  local table_gui = frame.add({ type = "table", column_count = 4 })
+  local scroll = frame.add({ type = "scroll-pane" })
+  scroll.style.maximal_height = 360
+  scroll.style.minimal_width = 310
+  local table_gui = scroll.add({ type = "table", column_count = 4 })
   table_gui.add({ type = "label", caption = T("材料", "Material") })
   table_gui.add({ type = "label", caption = T("需要", "Required") })
   table_gui.add({ type = "label", caption = T("助手现有", "Available") })
@@ -1163,6 +1174,16 @@ function M.on_gui_click(event)
     close_blueprint_materials(player)
     return
   end
+  if name == PREFIX .. "blueprint_materials_show" then
+    local state = storage.local_gui[player.index]
+    local info = state and state.last_blueprint_materials
+    if info then
+      show_blueprint_materials(player, info)
+    else
+      status(player, T("还没有选择过蓝图", "No blueprint has been selected yet"))
+    end
+    return
+  end
   if name == PREFIX .. "mine_close" then
     close_mining_picker(player)
     return
@@ -1793,7 +1814,19 @@ function M.on_tick()
       local ghosts = state.native_blueprint_ghosts or {}
       state.native_blueprint_queue_tick = nil
       state.native_blueprint_ghosts = {}
-      if player and #ghosts > 0 then queue_selection(player, ghosts, "build") end
+      if player and #ghosts > 0 then
+        -- put_on_cursor creates a temporary preview stack. Destroy that exact
+        -- temporary blueprint before switching tools; clear_cursor() would
+        -- move it into the inventory and duplicate the source blueprint.
+        pcall(function()
+          if player.cursor_stack and player.cursor_stack.valid_for_read
+              and player.cursor_stack.is_blueprint then
+            player.cursor_stack.clear()
+          end
+        end)
+        state.native_blueprint_active = false
+        queue_selection(player, ghosts, "build")
+      end
     end
   end
 end

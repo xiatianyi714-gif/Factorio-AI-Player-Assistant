@@ -1,6 +1,6 @@
 # 异星工厂 AI 玩家助手 / Factorio AI Player Assistant
 
-> 当前版本 / Current version: 0.19.2 — 生产工作采用设备白名单，只维护明确标注的原料、燃料和满仓成品收纳。
+> 当前版本 / Current version: 0.19.3 — 蓝图施工批量领取多种材料、修复临时蓝图复制，并提供右侧常驻材料清单。
 
 一个完全在 Factorio 2.0 游戏内运行的多助手模组，不需要外部 AI、API、Codex 或 Token。助手像真实角色一样移动、采矿、搬运、建造和战斗，所有物品都来自实际背包、箱子或采集行为。
 
@@ -74,6 +74,8 @@ This enhanced edition continues development from the mod code in Agentic-Factori
 - Companions physically construct selected ghosts and physically deconstruct selected buildings, trees, rocks, or wreckage.
 
 - 蓝图使用原版光标放置体验，显示完整建筑虚影、可放置状态及材料需求清单。
+- 每名助手施工前会汇总自己负责的全部建筑，拜访箱子时一次领取其中所有需要且背包装得下的材料，减少按单个建筑往返。
+- 蓝图预览使用的临时光标副本会在放置后直接销毁，不会凭空进入玩家背包；最近一次蓝图的材料清单常驻小地图下方，也可从工作页随时重新打开。
 - Blueprints use the native cursor placement experience with full ghost previews, placement validity, and a material requirement list.
 
 - 蓝图放置后，助手会在施工区域 256 格内主动寻找存有材料的己方箱子，亲自取料、返回并逐个建造虚影。
