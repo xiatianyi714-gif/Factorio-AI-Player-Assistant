@@ -110,12 +110,12 @@ end
 
 function M.is_configured(entity)
   local rec = key(entity) and rules()[key(entity)]
-  return rec ~= nil and next(rec.items or {}) ~= nil
+  return type(rec) == "table" and next(rec.items or {}) ~= nil
 end
 
 function M.has_rule(entity, item)
   local rec = key(entity) and rules()[key(entity)]
-  return rec ~= nil and rec.items ~= nil and rec.items[item] ~= nil
+  return type(rec) == "table" and type(rec.items) == "table" and rec.items[item] ~= nil
 end
 
 local function has_stock(c, item, center, radius)
@@ -133,7 +133,10 @@ local function find_output_task(c, radius, center)
   local best_key, best_d
   for route_key, route in pairs(storage.output_routes or {}) do
     local source, destination = route.source, route.destination
-    if M.is_configured(source) and source.surface == c.surface and source.force == c.force
+    if not (source and source.valid and destination and destination.valid) then
+      storage.output_routes[route_key] = nil
+      if storage.output_route_locks then storage.output_route_locks[route_key] = nil end
+    elseif M.is_configured(source) and source.surface == c.surface and source.force == c.force
         and destination and destination.valid then
       local d = distance_sq(source.position, center)
       if d <= radius * radius then

@@ -1,5 +1,19 @@
 # 更新日志 / Changelog
 
+## 0.19.4
+
+### 中文
+
+- 修复成品收纳路线的来源设备被拆除或失效后，生产白名单检查把布尔值当作规则记录并导致游戏崩溃的问题。
+- 无效的成品来源、目标箱和对应任务锁现在会在扫描时自动清理，不影响存档中的其他配置。
+- 加强设备清单类型检查，旧存档、拆除设备和失效实体都只会被安全跳过。
+
+### English
+
+- Fixed a crash where a removed or invalid output-route source was treated as a machine-rule record during production allowlist checks.
+- Invalid output sources, destination chests and matching task locks are now cleaned automatically during scans without affecting other saved settings.
+- Hardened machine-rule type checks so old saves, removed machines and invalid entities are safely skipped.
+
 ## 0.19.3
 
 ### 中文
