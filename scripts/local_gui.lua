@@ -1107,6 +1107,11 @@ function M.on_selected_area(event)
       x = (area.left_top.x + area.right_bottom.x) / 2,
       y = (area.left_top.y + area.right_bottom.y) / 2,
     }
+    -- Store a standable coordinate beside buildings rather than their centre.
+    -- patrol.start performs the same migration for routes saved by old versions.
+    point = player.surface.find_non_colliding_position("character", point, 16, 0.25)
+      or player.surface.find_non_colliding_position("character", point, 32, 0.5)
+      or point
     pending.points[#pending.points + 1] = point
     if event.name == defines.events.on_player_alt_selected_area and #pending.points >= 2 then
       start_custom_patrol(player)

@@ -1,5 +1,33 @@
 # 更新日志 / Changelog
 
+## 0.9.24
+
+### 中文
+
+- 巡逻点与炮塔或建筑重叠时，自动将目的地调整到建筑旁最近的可站立位置，避免助手持续撞向建筑。
+- 新建路线会直接保存安全坐标；旧版已保存路线在每次开始时也会自动校正，无需重新绘制。
+- 包含 0.9.23 的煤炭优先补燃料改进。
+
+### English
+
+- Patrol points overlapping turrets or buildings are moved to the nearest standable position, preventing companions from continually walking into structures.
+- New routes store safe coordinates, while routes saved by older versions are corrected whenever patrol begins and do not need to be redrawn.
+- Includes the coal-first refueling improvement from 0.9.23.
+
+## 0.9.23
+
+### 中文
+
+- 自动补充燃料现在优先使用煤炭：先检查助手背包中的煤炭，再优先寻找装有煤炭的己方箱子。
+- 没有煤炭或目标设备暂时无法接收煤炭时，才回退使用其他兼容燃料。
+- 明确指定燃料的外部命令仍尊重指定类型；不会凭空生成煤炭。
+
+### English
+
+- Automatic refueling now prefers coal, checking carried coal first and then prioritizing friendly chests containing coal.
+- Other compatible fuels are used only when coal is unavailable or the target cannot currently accept it.
+- Explicit fuel selections remain respected; coal is never created from nothing.
+
 ## 0.9.22
 
 ### 中文

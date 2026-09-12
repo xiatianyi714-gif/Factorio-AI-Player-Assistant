@@ -41,6 +41,7 @@ local function pick_carried_fuel(c, burner, preferred)
   local best, best_value = nil, 0
   for _, item in ipairs(c.get_main_inventory().get_contents()) do
     local ok, value = compatible_fuel(item.name, burner, preferred)
+    if ok and not preferred and item.name == "coal" then return "coal" end
     if ok and value > best_value then
       best, best_value = item.name, value
     end
@@ -50,7 +51,7 @@ end
 
 -- Find the nearest same-force chest containing fuel accepted by this burner.
 local function find_fuel_chest(c, burner, preferred, center, radius)
-  local best_box, best_fuel, best_d
+  local best_box, best_fuel, best_d, best_is_coal
   for _, box in ipairs(c.surface.find_entities_filtered({
     position = center,
     radius = radius,
@@ -63,8 +64,10 @@ local function find_fuel_chest(c, burner, preferred, center, radius)
         local compatible = compatible_fuel(item.name, burner, preferred)
         if compatible then
           local d = dist_sq(box.position, c.position)
-          if not best_box or d < best_d then
-            best_box, best_fuel, best_d = box, item.name, d
+          local is_coal = not preferred and item.name == "coal"
+          if not best_box or (is_coal and not best_is_coal)
+              or (is_coal == best_is_coal and d < best_d) then
+            best_box, best_fuel, best_d, best_is_coal = box, item.name, d, is_coal
           end
         end
       end

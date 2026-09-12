@@ -40,7 +40,12 @@ local function gun_range(c)
 end
 
 local function safe_point(c, desired)
-  return c.surface.find_non_colliding_position("character", desired, 8, 0.5) or desired
+  -- Route clicks may land at the centre of a turret or another building.
+  -- Never preserve an occupied coordinate: resolve it to the nearest place a
+  -- character can actually stand, with a wider second attempt for large sites.
+  return c.surface.find_non_colliding_position("character", desired, 16, 0.25)
+    or c.surface.find_non_colliding_position("character", desired, 32, 0.5)
+    or { x = c.position.x, y = c.position.y }
 end
 
 function M.start(task)

@@ -36,6 +36,7 @@ This enhanced edition continues development from the mod code in Agentic-Factori
 
 - 自定义路线会按助手分别保存并可一键重新使用；巡逻中缺枪或弹药时，助手会从己方箱子取得兼容装备后继续路线。
 - 自定义及保存的巡逻路线严格按设置顺序循环；寻路重试或战斗结束后仍会先到达当前路线点，不会跳点。
+- 巡逻点与炮塔或其他建筑重叠时会自动调整到建筑旁最近的可站立位置，旧路线同样会自动校正。
 - Custom routes are saved per companion and can be restarted with one click; patrolling companions retrieve compatible guns or ammunition from friendly chests before resuming their route.
 
 - 遭遇战只会临时挂起维修、补给、施工或巡逻；战斗结束后助手会从当前位置重新寻路并恢复原任务进度。
@@ -68,7 +69,7 @@ This enhanced edition continues development from the mod code in Agentic-Factori
 - 不同成品可映射到不同箱子，助手会记住“成品 → 箱子”的分类规则。
 - Different products can be mapped to different chests, and companions remember each product-to-chest sorting rule.
 
-- 自动检查燃料目标数量，依次给多个设备补充；背包和箱子没有燃料时会寻找煤矿并实际开采。
+- 自动检查燃料目标数量，依次给多个设备补充；优先使用助手背包或己方箱子中的煤炭，没有可用煤炭时才使用其他兼容燃料，全部缺少时会寻找煤矿并实际开采。
 - Automatically checks target fuel levels and services multiple machines; when neither inventories nor chests contain fuel, the companion finds and physically mines coal.
 
 - 主动寻找受损的己方设备并连续维修；优先使用助手背包里的修理包，没有时会走到设备附近的己方箱子取用，绝不凭空生成。
