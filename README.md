@@ -36,7 +36,6 @@ This enhanced edition continues development from the mod code in Agentic-Factori
 
 - 自定义路线会按助手分别保存并可一键重新使用；巡逻中缺枪或弹药时，助手会从己方箱子取得兼容装备后继续路线。
 - 自定义及保存的巡逻路线严格按设置顺序循环；寻路重试或战斗结束后仍会先到达当前路线点，不会跳点。
-- 巡逻助手会检查路线附近 64 格内的低弹药炮塔，从背包或己方箱子取得兼容弹药并补到设定数量，然后返回当前路线点继续巡逻。
 - Custom routes are saved per companion and can be restarted with one click; patrolling companions retrieve compatible guns or ammunition from friendly chests before resuming their route.
 
 - 遭遇战只会临时挂起维修、补给、施工或巡逻；战斗结束后助手会从当前位置重新寻路并恢复原任务进度。

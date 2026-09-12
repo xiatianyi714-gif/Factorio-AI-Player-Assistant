@@ -1,5 +1,19 @@
 # 更新日志 / Changelog
 
+## 0.9.22
+
+### 中文
+
+- 按玩家反馈移除巡逻途中的炮塔自动补弹，避免助手偏离路线并持续挤向炮塔。
+- 待机自动补弹及原地镇守补弹功能保持不变。
+- 保留严格按保存点顺序巡逻及战斗后恢复当前路线点的修复。
+
+### English
+
+- Removed automatic turret resupply during patrols following player feedback, preventing companions from leaving their route and crowding turrets.
+- Idle and hold-position turret resupply remain available.
+- Strict ordered patrol routes and post-combat waypoint recovery remain intact.
+
 ## 0.9.21
 
 ### 中文
