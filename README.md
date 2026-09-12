@@ -1,6 +1,6 @@
 # 异星工厂 AI 玩家助手 / Factorio AI Player Assistant
 
-> 当前版本 / Current version: 0.15.7 — 燃料采用“低位触发、高位补齐”，避免助手不停追着刚消耗一块煤的设备补充。
+> 当前版本 / Current version: 0.16.0 — 助手会用自然气泡回应命令、报告遭遇与受伤，并在基地遇袭时全员集结防守。
 
 一个完全在 Factorio 2.0 游戏内运行的多助手模组，不需要外部 AI、API、Codex 或 Token。助手像真实角色一样移动、采矿、搬运、建造和战斗，所有物品都来自实际背包、箱子或采集行为。
 
@@ -15,6 +15,12 @@ A multi-companion mod that runs entirely inside Factorio 2.0. It requires no ext
 This enhanced edition continues development from the mod code in Agentic-Factorio, created by Matteo Mekhail. Credit belongs to the original author for publishing the project and its initial design. The local command system and later features in this repository are refactors and extensions of that work, and the original project is not claimed as the work of this edition's maintainer.
 
 ## 主要特点 / Main Features
+
+- 成功下达指令后，收到命令的助手会在自己头顶用自然语气回应；发现敌人或受伤时也会说出带冷却的战斗对白，其中偶尔包含轻微脏话。
+- After a successful order, each addressed companion answers naturally above its own head. Enemy sightings and injuries also trigger rate-limited combat chatter, with occasional mild profanity.
+
+- 玩家或己方建筑遭敌人攻击时，同一地表的所有助手会暂时放下当前工作、集结到遇袭点共同防守；战斗结束后恢复各自原来的任务。
+- When the player or a friendly structure is attacked, every companion on that surface suspends its current work and rallies to defend the attacked area, then resumes the previous task after combat.
 
 - 最多生成四名助手，可向全部助手或单个助手下达命令。
 - Spawn up to four companions and command all of them or an individual companion.

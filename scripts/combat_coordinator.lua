@@ -4,6 +4,7 @@
 -- resumes its exact suspended patrol task.
 local companion = require("scripts.companion")
 local tasks = require("scripts.tasks")
+local chatter = require("scripts.chatter")
 
 local M = {}
 local DETECTION_RADIUS = 30
@@ -42,6 +43,7 @@ function M.on_tick()
       local c = companion.get(name)
       local enemy = c and nearest_patrol_enemy(c)
       if enemy then
+        chatter.spotted(name)
         alert = {
           surface = c.surface,
           position = { x = enemy.position.x, y = enemy.position.y },
@@ -65,6 +67,21 @@ function M.on_tick()
         tactical = true,
         squad_response = true,
       })
+      chatter.assist(name)
+    end
+  end
+  companion.set_context(nil)
+end
+
+function M.rally_all(surface, position)
+  for _, name in ipairs(companion.names()) do
+    local c = companion.get(name)
+    if c and c.surface == surface then
+      tasks.interrupt_for_combat(name, {
+        type = "fight", target = { x = position.x, y = position.y }, radius = 60,
+        tactical = true, squad_response = true, base_defense = true,
+      })
+      chatter.rally(name)
     end
   end
   companion.set_context(nil)

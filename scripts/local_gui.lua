@@ -2,6 +2,7 @@ local companion = require("scripts.companion")
 local tasks = require("scripts.tasks")
 local equipment = require("scripts.equipment")
 local blueprint = require("scripts.blueprint")
+local chatter = require("scripts.chatter")
 
 local M = {}
 local PREFIX = "agentic_local_"
@@ -1259,6 +1260,7 @@ function M.on_gui_click(event)
           max_empty_scans = 1,
         }
       end)
+      pcall(chatter.order, command_names(player))
       status(player, command_label(player) .. T(" 正在寻找并维修受损设备；全部修完后恢复待机", " are finding and repairing damaged machines, then returning to idle when all repairs are complete"))
     elseif name == PREFIX .. "follow" then
       order_all(player, function() return { type = "follow_player", player = player.name, distance = 3 } end)

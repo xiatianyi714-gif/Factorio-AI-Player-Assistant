@@ -4,6 +4,7 @@
 local companion = require("scripts.companion")
 local equipment = require("scripts.equipment")
 local walk = require("scripts.actions.walk")
+local chatter = require("scripts.chatter")
 
 local M = {}
 
@@ -60,6 +61,9 @@ end
 function M.start(task)
   local c = companion.require_companion()
   equipment.auto_arm(c)
+  if not task.base_defense and not task.squad_response then
+    chatter.spotted(companion.context())
+  end
   task.radius = math.min(tonumber(task.radius) or DEFAULT_RADIUS, MAX_RADIUS)
   local rec = companion.record()
   local stance_name = rec and rec.engagement_stance or "balanced"

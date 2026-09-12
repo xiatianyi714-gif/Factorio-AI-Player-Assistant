@@ -16,6 +16,7 @@ local screenshot = require("scripts.screenshot")
 local local_gui = require("scripts.local_gui")
 local idle = require("scripts.idle")
 local combat_coordinator = require("scripts.combat_coordinator")
+local chatter = require("scripts.chatter")
 
 rpc.register("ping", function()
   return {
@@ -122,9 +123,17 @@ script.on_event(defines.events.on_entity_damaged, function(event)
   if not (entity and entity.valid) then return end
   local attacker = event.cause
   if not (attacker and attacker.valid and attacker.force ~= entity.force) then return end
+  if entity.force == game.forces.player then
+    local last_rally = storage.last_base_rally_tick
+    if not last_rally or game.tick - last_rally >= 5 * 60 then
+      storage.last_base_rally_tick = game.tick
+      combat_coordinator.rally_all(entity.surface, entity.position)
+    end
+  end
   for _, name in ipairs(companion.names()) do
     local c = companion.get(name)
     if c == entity then
+      chatter.hurt(name)
       local rec = companion.record(name)
       local last = rec and rec.self_defense_tick
       local active = tasks.active_summary(name)

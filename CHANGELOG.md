@@ -1,5 +1,23 @@
 # 更新日志 / Changelog
 
+## 0.16.0
+
+### 中文
+
+- 成功命令会让收到指令的助手在自己头顶用多种自然口吻回应，不再只有玩家单方面说话。
+- 助手发现敌人、支援队友或受到伤害时会显示带冷却的情境气泡，偶尔包含轻微脏话，但不会连续刷屏。
+- 玩家、助手或己方建筑遭敌对势力攻击时，同一地表的所有助手会立刻集结到遇袭区域共同战斗。
+- 集结属于临时战斗中断；威胁清除后，每名助手会恢复战前的维修、补给、施工、巡逻等原任务。
+- 普通巡逻支援与基地遇袭使用不同对白，避免把沿途遭遇误报为基地入侵。
+
+### English
+
+- Successful orders now receive varied, natural replies above the addressed companions instead of only showing the player's command.
+- Companions show rate-limited situational speech when spotting enemies, assisting allies or taking damage, including occasional mild profanity without chat spam.
+- When the player, a companion or a friendly structure is attacked, every companion on that surface immediately rallies to the attacked area.
+- A rally is a temporary combat interruption; after the threat is cleared, each companion resumes its previous repair, supply, construction, patrol or other task.
+- Routine patrol assistance uses separate dialogue from a base-defense rally, preventing ordinary encounters from being announced as invasions.
+
 ## 0.15.7
 
 ### 中文
