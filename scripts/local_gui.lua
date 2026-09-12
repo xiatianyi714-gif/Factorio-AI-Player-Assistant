@@ -887,10 +887,11 @@ function M.on_gui_click(event)
       order_all(player, function() return { type = "patrol", radius = 12 } end)
       status(player, command_label(player) .. T(" 正在周边巡逻", " are patrolling nearby"))
     elseif name == PREFIX .. "attack" then
-      order_all(player, function(c)
-        return { type = "fight", target = { x = c.position.x, y = c.position.y }, radius = 40 }
+      local command_center = { x = player.position.x, y = player.position.y }
+      order_all(player, function()
+        return { type = "fight", target = command_center, radius = 256, hunt = true }
       end)
-      status(player, command_label(player) .. T(" 正在清理附近敌人", " are clearing nearby enemies"))
+      status(player, command_label(player) .. T(" 正在主动搜索并清理周围敌人", " are actively hunting nearby enemies"))
     elseif name == PREFIX .. "stop" then
       local selected = command_names(player)
       for _, who in ipairs(selected) do tasks.cancel({ all = true, companion = who }) end

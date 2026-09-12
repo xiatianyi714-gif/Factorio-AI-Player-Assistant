@@ -1,5 +1,13 @@
 # 更新日志 / Changelog
 
+## 0.9.10 — 主动搜索敌人 / Active Enemy Hunting
+
+- “清理敌人”命令改为以玩家下令位置为中心搜索 256 格范围，不再只检查助手脚下 40 格。
+- “Clear Enemies” now searches within 256 tiles of the player's command position instead of only 40 tiles around each companion.
+
+- 助手找到敌人后会主动寻路接近并连续寻找下一个目标，同时保留弹药、血量、敌我数量判断和撤退逻辑。
+- After finding an enemy, companions actively path toward it and continue to the next target while retaining ammunition, health, force-balance, and retreat decisions.
+
 ## 0.9.9 — 待机挖矿优先级调整 / Idle Mining Priority Adjustment
 
 - 将助手待机时的自动挖矿降为最低优先级；现在依次优先处理战斗、主动维修、补齐燃料和巡逻，只有前述工作都未分配时才会挖矿。

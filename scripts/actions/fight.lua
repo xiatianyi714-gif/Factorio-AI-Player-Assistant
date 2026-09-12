@@ -9,7 +9,9 @@ local M = {}
 
 local ENEMY_TYPES = { "unit", "unit-spawner", "turret" }
 local DEFAULT_RADIUS = 20
-local MAX_RADIUS = 40
+-- Explicit hunt orders may cover a broad generated area. Target acquisition
+-- happens only when the current target is gone, so this does not scan every tick.
+local MAX_RADIUS = 256
 local DEFAULT_FLEE_BELOW = 0.3
 local MELEE_RANGE = 1.75
 local MELEE_DAMAGE = 8
@@ -62,6 +64,7 @@ function M.start(task)
     range = gun_range(c),
     engaged = false,
     next_melee_tick = 0,
+    hunt = task.hunt == true,
   }
 end
 
