@@ -1,5 +1,19 @@
 # 更新日志 / Changelog
 
+## 0.16.2
+
+### 中文
+
+- 修复助手巡逻发现敌人并尝试显示气泡时，因 Factorio 2.0 不存在旧版 `flying-text` 实体而导致模组崩溃的问题。
+- 改用 Factorio 2.0 支持的玩家本地浮动文字接口，在助手头顶向同一地表的玩家显示对白。
+- 对气泡显示增加运行时保护；即使某位玩家暂时无法显示文字，也不会再中断游戏或损坏当前任务。
+
+### English
+
+- Fixed a crash when patrol companions spotted an enemy and attempted to create the removed Factorio 2.0 `flying-text` entity.
+- Companion speech now uses Factorio 2.0's supported player-local floating-text API for players on the same surface.
+- Speech rendering is runtime-guarded so a display failure can never interrupt simulation or the active task.
+
 ## 0.16.1
 
 ### 中文

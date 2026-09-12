@@ -32,13 +32,25 @@ local function speak(name, kind, cooldown)
   if (rec.chatter_ticks[kind] or 0) > game.tick then return false end
   rec.chatter_ticks[kind] = game.tick + cooldown
   local pool = lines(kind)
-  c.surface.create_entity({
-    name = "flying-text",
-    position = { x = c.position.x, y = c.position.y - 2.2 },
-    text = pool[math.random(1, #pool)],
-    color = kind == "hurt" and { r = 1, g = 0.35, b = 0.25 }
-      or (kind == "rally" and { r = 1, g = 0.75, b = 0.15 } or { r = 0.4, g = 1, b = 0.55 }),
-  })
+  local message = pool[math.random(1, #pool)]
+  local color = kind == "hurt" and { r = 1, g = 0.35, b = 0.25 }
+    or (kind == "rally" and { r = 1, g = 0.75, b = 0.15 } or { r = 0.4, g = 1, b = 0.55 })
+  -- Factorio 2.0 has no runtime entity prototype named "flying-text".
+  -- Display the speech locally for every connected player on this surface.
+  -- Keep the visual effect fully guarded: chatter must never stop simulation.
+  for _, player in pairs(game.connected_players) do
+    if player.surface == c.surface then
+      pcall(function()
+        player.create_local_flying_text({
+          text = message,
+          position = { x = c.position.x, y = c.position.y - 2.2 },
+          color = color,
+          time_to_live = 180,
+          speed = 0.02,
+        })
+      end)
+    end
+  end
   return true
 end
 
