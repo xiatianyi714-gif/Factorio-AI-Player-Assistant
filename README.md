@@ -31,6 +31,7 @@ This enhanced edition continues development from the mod code in Agentic-Factori
 - 每个助手都可像《环世界》一样单独设置维修、补燃料、炮塔补弹、生产投料、巡逻和采矿的工作优先级（1–4 或关闭）；同级工作会轮换，战斗自卫始终优先。
 - Each companion has RimWorld-style individual priorities (1–4 or Off) for repair, refueling, turret supply, production input, patrol and mining; equal-priority jobs rotate, while self-defense always comes first.
 - 主面板实时显示每个助手的当前工作、生命、背包数量、排队任务、战斗后恢复任务及最近失败原因。
+- 主面板使用“常用、工作、管理、状态”四个分页，平时只显示当前需要的一组按钮，减少滚动和误操作。
 - The main panel shows each companion's live work, health, inventory count, queued work, post-combat resume task and recent failure reason.
 - 每个助手可设置32–512格的自主搜索半径，维修、燃料、炮塔、生产和待机采矿只搜索其当前位置周围的指定范围。
 - Each companion has a 32–512 tile autonomous search radius applied to repair, fuel, turrets, production and idle mining around its current position.

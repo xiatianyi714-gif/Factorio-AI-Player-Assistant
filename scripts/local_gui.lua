@@ -11,6 +11,17 @@ local function english()
   return storage.local_language == "en"
 end
 
+local function show_main_section(player, selected)
+  local panel = player.gui.left[PREFIX .. "panel"]
+  if not (panel and panel.valid) then return end
+  for _, key in ipairs({ "common", "work", "manage", "live" }) do
+    local section = panel[PREFIX .. key .. "_section"]
+    if section and section.valid then section.visible = key == selected end
+  end
+  storage.local_gui[player.index] = storage.local_gui[player.index] or {}
+  storage.local_gui[player.index].main_section = selected
+end
+
 local function T(zh, en)
   return english() and en or zh
 end
@@ -89,15 +100,27 @@ local function make_gui(player)
   local target_items = { T("全部助手", "All companions") }
   for _, name in ipairs(companion.names()) do target_items[#target_items + 1] = name end
   frame.add({ type = "drop-down", name = PREFIX .. "target", items = target_items, selected_index = 1 })
-  frame.add({ type = "label", caption = T("补给只从助手能伸手够到的己方箱子获取", "Supplies are taken only from reachable friendly chests") })
-  local supply = frame.add({ type = "table", name = PREFIX .. "supply_controls", column_count = 2 })
-  supply.add({ type = "button", name = PREFIX .. "spawn", caption = T("增加 AI", "Add AI") })
-  supply.add({ type = "button", name = PREFIX .. "remove", caption = T("减少 AI", "Remove AI") })
-  supply.add({ type = "button", name = PREFIX .. "equip", caption = T("装备现有武器", "Equip weapons") })
-  supply.add({ type = "button", name = PREFIX .. "refuel", caption = T("补齐燃料", "Refuel machines") })
-  supply.add({ type = "button", name = PREFIX .. "repair", caption = T("主动维修", "Repair machines") })
-  supply.add({ type = "button", name = PREFIX .. "priorities", caption = T("工作优先级", "Work priorities") })
-  supply.add({ type = "label", caption = T("维修包可从设备附近己方箱子获取", "Repair packs may be collected from friendly chests near a machine") })
+  local tabs = frame.add({ type = "table", column_count = 4 })
+  tabs.add({ type = "button", name = PREFIX .. "section_common", caption = T("常用", "Orders") })
+  tabs.add({ type = "button", name = PREFIX .. "section_work", caption = T("工作", "Work") })
+  tabs.add({ type = "button", name = PREFIX .. "section_manage", caption = T("管理", "Manage") })
+  tabs.add({ type = "button", name = PREFIX .. "section_live", caption = T("状态", "Status") })
+
+  local common = frame.add({ type = "flow", name = PREFIX .. "common_section", direction = "vertical" })
+  local quick = common.add({ type = "table", column_count = 2 })
+  quick.add({ type = "button", name = PREFIX .. "follow", caption = T("跟随我", "Follow me") })
+  quick.add({ type = "button", name = PREFIX .. "hold", caption = T("原地镇守", "Hold position") })
+  quick.add({ type = "button", name = PREFIX .. "patrol", caption = T("巡逻", "Patrol") })
+  quick.add({ type = "button", name = PREFIX .. "patrol_saved", caption = T("使用保存路线", "Use saved route") })
+  quick.add({ type = "button", name = PREFIX .. "attack", caption = T("清理敌人", "Clear enemies") })
+  quick.add({ type = "button", name = PREFIX .. "stop", caption = T("停止命令", "Stop orders") })
+  quick.add({ type = "button", name = PREFIX .. "refuel", caption = T("补齐燃料", "Refuel machines") })
+  quick.add({ type = "button", name = PREFIX .. "repair", caption = T("主动维修", "Repair machines") })
+
+  local work = frame.add({ type = "flow", name = PREFIX .. "work_section", direction = "vertical" })
+  work.visible = false
+  work.add({ type = "button", name = PREFIX .. "priorities", caption = T("各助手工作优先级与范围", "Companion priorities and range") })
+  local supply = work.add({ type = "table", name = PREFIX .. "supply_controls", column_count = 2 })
   supply.add({ type = "label", caption = T("设备燃料目标数量", "Target fuel count") })
   supply.add({ type = "textfield", name = PREFIX .. "fuel_count", text = tostring(storage.autonomy_fuel_target or 10), numeric = true, allow_decimal = false, allow_negative = false })
   supply.add({ type = "label", caption = T("炮塔目标弹药数量", "Target turret ammunition") })
@@ -106,24 +129,27 @@ local function make_gui(player)
   supply.add({ type = "textfield", name = PREFIX .. "supply_count", text = "50", numeric = true, allow_decimal = false, allow_negative = false })
   supply.add({ type = "label", caption = T("每采集多少去投", "Harvest amount before feeding") })
   supply.add({ type = "textfield", name = PREFIX .. "harvest_count", text = "50", numeric = true, allow_decimal = false, allow_negative = false })
-  frame.add({ type = "label", caption = T("移动与战斗", "Movement & combat") })
-  local move = frame.add({ type = "table", column_count = 2 })
-  move.add({ type = "button", name = PREFIX .. "follow", caption = T("跟随我", "Follow me") })
-  move.add({ type = "button", name = PREFIX .. "hold", caption = T("原地镇守", "Hold position") })
-  move.add({ type = "button", name = PREFIX .. "patrol", caption = T("巡逻", "Patrol") })
-  move.add({ type = "button", name = PREFIX .. "patrol_custom", caption = T("自定义巡逻", "Custom patrol") })
-  move.add({ type = "button", name = PREFIX .. "patrol_finish", caption = T("完成巡逻路线", "Finish patrol route") })
-  move.add({ type = "button", name = PREFIX .. "patrol_saved", caption = T("使用保存路线", "Use saved route") })
-  move.add({ type = "button", name = PREFIX .. "attack", caption = T("清理敌人", "Clear enemies") })
-  move.add({ type = "button", name = PREFIX .. "stop", caption = T("停止命令", "Stop orders") })
-  frame.add({ type = "label", caption = T("施工（材料取自助手背包）", "Construction (materials from companion inventories)") })
-  local build = frame.add({ type = "table", column_count = 2 })
+  local build = work.add({ type = "table", column_count = 2 })
+  build.add({ type = "button", name = PREFIX .. "patrol_custom", caption = T("设置巡逻路线", "Set patrol route") })
+  build.add({ type = "button", name = PREFIX .. "patrol_finish", caption = T("完成巡逻路线", "Finish patrol route") })
   build.add({ type = "button", name = PREFIX .. "build", caption = T("框选建造蓝图", "Build selected ghosts") })
   build.add({ type = "button", name = PREFIX .. "demolish", caption = T("框选拆除", "Deconstruct selection") })
   build.add({ type = "button", name = PREFIX .. "mine_supply", caption = T("采集·生产·收纳", "Mine · Produce · Store") })
   build.add({ type = "button", name = PREFIX .. "blueprints", caption = T("蓝图施工", "Blueprint construction") })
-  frame.add({ type = "label", caption = T("助手实时状态", "Live companion status") })
-  frame.add({ type = "table", name = PREFIX .. "assistant_status", column_count = 2 })
+
+  local manage = frame.add({ type = "flow", name = PREFIX .. "manage_section", direction = "vertical" })
+  manage.visible = false
+  manage.add({ type = "label", caption = T("助手与装备", "Companions and equipment") })
+  local manage_buttons = manage.add({ type = "table", column_count = 2 })
+  manage_buttons.add({ type = "button", name = PREFIX .. "spawn", caption = T("增加 AI", "Add AI") })
+  manage_buttons.add({ type = "button", name = PREFIX .. "remove", caption = T("减少 AI", "Remove AI") })
+  manage_buttons.add({ type = "button", name = PREFIX .. "equip", caption = T("装备现有武器", "Equip weapons") })
+  manage.add({ type = "label", caption = T("补给只使用助手背包或己方箱子的真实物品", "Supplies use only real items from companion inventories or friendly chests") })
+
+  local live = frame.add({ type = "flow", name = PREFIX .. "live_section", direction = "vertical" })
+  live.visible = false
+  live.add({ type = "label", caption = T("助手实时状态", "Live companion status") })
+  live.add({ type = "table", name = PREFIX .. "assistant_status", column_count = 2 })
   frame.add({ type = "label", name = PREFIX .. "status", caption = T("就绪", "Ready") })
 end
 
@@ -412,7 +438,8 @@ end
 
 local function configured_count(player, field, fallback, maximum)
   local panel = player.gui.left[PREFIX .. "panel"]
-  local controls = panel and panel[PREFIX .. "supply_controls"]
+  local work = panel and panel[PREFIX .. "work_section"]
+  local controls = work and work[PREFIX .. "supply_controls"]
   local input = controls and controls[PREFIX .. field]
   local value = math.floor(tonumber(input and input.text) or fallback)
   return math.max(1, math.min(value, maximum))
@@ -461,7 +488,8 @@ end
 
 local function refresh_assistant_status(player)
   local panel = player.gui.left[PREFIX .. "panel"]
-  local grid = panel and panel[PREFIX .. "assistant_status"]
+  local live = panel and panel[PREFIX .. "live_section"]
+  local grid = live and live[PREFIX .. "assistant_status"]
   if not (grid and grid.valid) then return end
   grid.clear()
   for _, who in ipairs(companion.names()) do
@@ -820,6 +848,12 @@ function M.on_gui_click(event)
   local element = event.element
   if not player or not element or not element.valid then return end
   local name = element.name
+  local section = string.match(name, "^" .. PREFIX .. "section_(%a+)$")
+  if section then
+    show_main_section(player, section)
+    if section == "live" then pcall(refresh_assistant_status, player) end
+    return
+  end
   if name == PREFIX .. "language" then
     storage.local_language = english() and "zh" or "en"
     for _, who in ipairs(companion.names()) do

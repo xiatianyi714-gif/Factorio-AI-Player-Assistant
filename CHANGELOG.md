@@ -1,5 +1,23 @@
 # 更新日志 / Changelog
 
+## 0.11.0
+
+### 中文
+
+- 助手长面板重构为“常用、工作、管理、状态”四个简洁分页，同一时间只显示一组相关功能。
+- 常用页集中跟随、镇守、巡逻、保存路线、清敌、停止、补燃料和维修。
+- 工作页集中个人优先级与范围、各项数量、路线编辑、建造拆除、蓝图以及采集生产收纳。
+- 管理页集中增加/减少助手和装备武器；状态页集中实时工作与失败诊断。
+- 语言和指令对象始终显示在顶部；全部原有功能、保存路线、个人设置及旧存档保持兼容。
+
+### English
+
+- Rebuilt the long companion panel into four compact pages: Orders, Work, Manage and Status, showing only one related group at a time.
+- Orders contains common movement, combat, repair and refueling commands.
+- Work contains priorities, ranges, quantities, route editing, construction, blueprints and production workflows.
+- Manage contains companion and equipment controls; Status contains live work and failure diagnostics.
+- Language and command target remain permanently visible; all existing features, routes, settings and saves remain compatible.
+
 ## 0.10.1
 
 ### 中文
