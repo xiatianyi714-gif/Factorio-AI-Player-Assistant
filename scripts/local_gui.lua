@@ -122,6 +122,8 @@ local function make_gui(player)
   build.add({ type = "button", name = PREFIX .. "demolish", caption = T("框选拆除", "Deconstruct selection") })
   build.add({ type = "button", name = PREFIX .. "mine_supply", caption = T("采集·生产·收纳", "Mine · Produce · Store") })
   build.add({ type = "button", name = PREFIX .. "blueprints", caption = T("蓝图施工", "Blueprint construction") })
+  frame.add({ type = "label", caption = T("助手实时状态", "Live companion status") })
+  frame.add({ type = "table", name = PREFIX .. "assistant_status", column_count = 2 })
   frame.add({ type = "label", name = PREFIX .. "status", caption = T("就绪", "Ready") })
 end
 
@@ -441,6 +443,52 @@ local WORK_TYPES = {
   { key = "mine", zh = "采矿", en = "Mining", default = 4 },
 }
 
+local TASK_NAMES = {
+  walk_to = { "移动", "Moving" }, follow_player = { "跟随", "Following" },
+  mine = { "采矿", "Mining" }, keep_fueled = { "补燃料", "Refueling" },
+  keep_repaired = { "维修", "Repairing" }, defend_area = { "镇守", "Defending" },
+  patrol = { "巡逻", "Patrolling" }, fight = { "战斗", "Fighting" },
+  turret_supply = { "炮塔补弹", "Supplying turret" }, supply_input = { "生产投料", "Supplying production" },
+  output_sort = { "收纳成品", "Storing output" }, production_chain = { "采集生产收纳", "Production chain" },
+  build_blueprint = { "蓝图施工", "Building blueprint" }, local_selection = { "框选施工", "Selection work" },
+  deconstruct = { "拆除", "Deconstructing" }, recover_death_items = { "取回遗物", "Recovering items" },
+}
+
+local function task_name(kind)
+  local names = TASK_NAMES[kind]
+  return names and T(names[1], names[2]) or tostring(kind or T("待机", "Idle"))
+end
+
+local function refresh_assistant_status(player)
+  local panel = player.gui.left[PREFIX .. "panel"]
+  local grid = panel and panel[PREFIX .. "assistant_status"]
+  if not (grid and grid.valid) then return end
+  grid.clear()
+  for _, who in ipairs(companion.names()) do
+    local c = companion.get(who)
+    local active = tasks.active_summary(who)
+    local health = c and math.floor(100 * (c.health or 0) / math.max(c.prototype.max_health or 1, 1)) or 0
+    local items = c and c.get_main_inventory().get_item_count() or 0
+    local work = active and task_name(active.type) or T("待机", "Idle")
+    if active and active.resume_type then
+      work = work .. T("（之后恢复" .. task_name(active.resume_type) .. "）",
+        " (then resume " .. task_name(active.resume_type) .. ")")
+    end
+    if active and (active.queue_length or 0) > 0 then
+      work = work .. string.format(T("；排队%d", "; queued %d"), active.queue_length)
+    end
+    grid.add({ type = "label", caption = who })
+    grid.add({ type = "label", caption = string.format(T("%s｜生命%d%%｜背包%d", "%s | HP %d%% | inventory %d"), work, health, items) })
+    local last = tasks.last_result(who)
+    if last and last.status == "failed" and game.tick - (last.tick or 0) < 18000 then
+      local detail = tostring(last.detail)
+      if #detail > 100 then detail = string.sub(detail, 1, 97) .. "..." end
+      grid.add({ type = "label", caption = T("最近失败", "Last failure") })
+      grid.add({ type = "label", caption = task_name(last.type) .. "：" .. detail })
+    end
+  end
+end
+
 local function close_priorities(player)
   local frame = player.gui.screen[PREFIX .. "priorities_frame"]
   if frame and frame.valid then frame.destroy() end
@@ -458,9 +506,10 @@ local function open_priorities(player)
   })
   frame.auto_center = true
   frame.add({ type = "label", caption = T("1 最高，4 最低；关闭表示不主动执行。战斗自卫始终优先。", "1 is highest and 4 lowest; Off disables autonomous work. Self-defense always takes priority.") })
-  local grid = frame.add({ type = "table", column_count = #WORK_TYPES + 1 })
+  local grid = frame.add({ type = "table", column_count = #WORK_TYPES + 2 })
   grid.add({ type = "label", caption = T("助手", "Companion") })
   for _, work in ipairs(WORK_TYPES) do grid.add({ type = "label", caption = T(work.zh, work.en) }) end
+  grid.add({ type = "label", caption = T("搜索半径", "Search radius") })
   local items = { T("关闭", "Off"), "1", "2", "3", "4" }
   for index, who in ipairs(names) do
     grid.add({ type = "label", caption = who })
@@ -473,6 +522,9 @@ local function open_priorities(player)
         items = items, selected_index = value == 0 and 1 or value + 1,
       })
     end
+    local settings = storage.work_settings and storage.work_settings[who] or {}
+    grid.add({ type = "textfield", name = PREFIX .. "work_radius_" .. index,
+      text = tostring(settings.radius or 256), numeric = true, allow_decimal = false, allow_negative = false })
   end
   frame.add({ type = "button", name = PREFIX .. "priorities_close", caption = T("完成", "Done") })
 end
@@ -742,7 +794,16 @@ function M.on_gui_text_changed(event)
   local element = event.element
   if not (element and element.valid) then return end
   local value = math.floor(tonumber(element.text) or 10)
-  if element.name == PREFIX .. "fuel_count" then
+  local radius_index = string.match(element.name, "^" .. PREFIX .. "work_radius_(%d+)$")
+  if radius_index then
+    local state = storage.local_gui[event.player_index]
+    local who = state and state.priority_names and state.priority_names[tonumber(radius_index)]
+    if who then
+      storage.work_settings = storage.work_settings or {}
+      storage.work_settings[who] = storage.work_settings[who] or {}
+      storage.work_settings[who].radius = math.max(32, math.min(value, 512))
+    end
+  elseif element.name == PREFIX .. "fuel_count" then
     storage.autonomy_fuel_target = math.max(1, math.min(value, 1000))
   elseif element.name == PREFIX .. "turret_ammo_count" then
     storage.autonomy_turret_ammo_target = math.max(1, math.min(value, 1000))
@@ -785,6 +846,7 @@ function M.on_gui_click(event)
   if name == PREFIX .. "toggle" then
     local panel = player.gui.left[PREFIX .. "panel"]
     panel.visible = not panel.visible
+    if panel.visible then refresh_assistant_status(player) end
     return
   end
   if name == PREFIX .. "bp_close" then
@@ -1322,6 +1384,9 @@ function M.on_built_entity(event)
 end
 
 function M.on_tick()
+  if game.tick % 60 == 0 then
+    for _, player in pairs(game.connected_players) do refresh_assistant_status(player) end
+  end
   for player_index, state in pairs(storage.local_gui or {}) do
     if state.native_blueprint_queue_tick and game.tick >= state.native_blueprint_queue_tick then
       local player = game.get_player(player_index)

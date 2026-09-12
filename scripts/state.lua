@@ -6,6 +6,7 @@ function M.init()
   storage.local_language = storage.local_language or "zh"
   storage.autonomy_turret_ammo_target = storage.autonomy_turret_ammo_target or 10
   storage.work_priorities = storage.work_priorities or {}
+  storage.work_settings = storage.work_settings or {}
   storage.chat = storage.chat or { messages = {}, next_id = 1 }
 
   -- Tasks: one lane (queue + active) per companion.

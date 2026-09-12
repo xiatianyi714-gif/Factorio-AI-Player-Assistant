@@ -113,6 +113,29 @@ local function needs_fuel(e, task)
   return count < task.top_up_count
 end
 
+-- Estimate one collection batch for every currently serviceable machine in
+-- this helper's work radius. The character inventory still provides the hard
+-- capacity limit, so this never creates items or takes more than it can carry.
+local function batch_fuel_need(c, task, item_name)
+  local total = 0
+  for _, e in ipairs(c.surface.find_entities_filtered({
+    position = c.position,
+    radius = task.radius,
+    force = c.force,
+  })) do
+    if e.valid and e.type ~= "character" then
+      local count = burner_fuel_count(e)
+      if count ~= nil and needs_fuel(e, task) then
+        local accepted = compatible_fuel(item_name, e.burner, task.fuel)
+        if accepted then
+          total = total + math.max(0, desired_fuel_count(task, e, item_name) - count)
+        end
+      end
+    end
+  end
+  return math.max(1, total)
+end
+
 function M.start(task)
   local c = companion.require_companion()
   local anchor = (task.center and type(task.center.x) == "number") and task.center or c.position
@@ -219,7 +242,11 @@ function M.tick(task)
       if reached_supply ~= "ok" then return nil end
       local inv = supply.box.get_inventory(defines.inventory.chest)
       local available = inv and inv.get_item_count(supply.item) or 0
-      local needed = math.max(0, desired_fuel_count(task, target, supply.item) - fuel_left)
+      -- Collect for all compatible low-fuel machines in one trip instead of
+      -- returning to the same chest after every individual machine.
+      local needed = math.max(
+        math.max(0, desired_fuel_count(task, target, supply.item) - fuel_left),
+        batch_fuel_need(c, task, supply.item))
       local n = math.min(available, needed)
       local inserted = 0
       if n > 0 then inserted = c.get_main_inventory().insert({ name = supply.item, count = n }) end

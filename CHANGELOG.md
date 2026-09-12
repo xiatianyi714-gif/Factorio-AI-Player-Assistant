@@ -1,5 +1,25 @@
 # 更新日志 / Changelog
 
+## 0.10.0
+
+### 中文
+
+- 主面板新增助手实时状态：当前工作、生命值、背包物品总数、排队任务，以及战斗结束后将恢复的原任务。
+- 最近五分钟内的任务失败会直接显示在对应助手下方，并限制过长错误文本，便于快速排查助手不动的原因。
+- “工作优先级”面板新增每个助手独立的自主搜索半径（32–512格，默认256格）。
+- 维修、补燃料、炮塔补弹、生产投料及待机采矿均遵守个人搜索半径，便于把不同助手限制在不同规模的基地或岗位附近。
+- 补燃料助手到达箱子后会汇总搜索范围内所有兼容设备的燃料缺口，一次尽量携带整批燃料并连续补充，减少在设备和箱子间来回跑。
+- 状态每秒刷新，打开命令面板时立即刷新；旧存档自动获得默认设置。
+
+### English
+
+- Added live companion status to the main panel: current work, health, carried item count, queued tasks, and work that will resume after combat.
+- Task failures from the last five minutes appear below the affected companion, with long errors safely shortened.
+- Added an individual autonomous search radius (32–512 tiles, default 256) to each companion in Work Priorities.
+- Repair, refueling, turret supply, production input and idle mining respect each companion's radius.
+- Refueling companions calculate the combined compatible fuel demand in their radius and collect as much of the batch as their inventory can carry, reducing repeated chest trips.
+- Status refreshes every second and immediately when the panel opens; existing saves migrate automatically.
+
 ## 0.9.25
 
 ### 中文

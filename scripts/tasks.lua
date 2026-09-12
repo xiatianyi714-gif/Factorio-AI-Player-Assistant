@@ -93,6 +93,15 @@ local function finish(task, status, detail)
     finished_tick = game.tick,
   }
   local l = lane(task.companion or companion.DEFAULT)
+  local rec = companion.record(task.companion or companion.DEFAULT)
+  if rec then
+    rec.last_task_result = {
+      type = task.type,
+      status = status,
+      detail = detail or "",
+      tick = game.tick,
+    }
+  end
   if l.active and l.active.id == task.id then
     l.active = nil
   end
@@ -266,9 +275,21 @@ end
 
 -- Serializable summary of a companion's active task for get_state.
 function M.active_summary(name)
-  local a = lane(name or companion.context()).active
+  local l = lane(name or companion.context())
+  local a = l.active
   if not a then return nil end
-  return { id = a.id, type = a.type, status = "running" }
+  return {
+    id = a.id,
+    type = a.type,
+    status = "running",
+    queue_length = #l.queue,
+    resume_type = l.suspended and l.suspended.active and l.suspended.active.type or nil,
+  }
+end
+
+function M.last_result(name)
+  local rec = companion.record(name or companion.context())
+  return rec and rec.last_task_result or nil
 end
 
 function M.queue_length(name)

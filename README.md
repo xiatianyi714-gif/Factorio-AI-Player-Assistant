@@ -30,6 +30,10 @@ This enhanced edition continues development from the mod code in Agentic-Factori
 - Turret ammunition targets are configurable in the panel; idle companions obtain compatible ammunition from inventories or friendly chests and resupply low-ammunition turrets.
 - 每个助手都可像《环世界》一样单独设置维修、补燃料、炮塔补弹、生产投料、巡逻和采矿的工作优先级（1–4 或关闭）；同级工作会轮换，战斗自卫始终优先。
 - Each companion has RimWorld-style individual priorities (1–4 or Off) for repair, refueling, turret supply, production input, patrol and mining; equal-priority jobs rotate, while self-defense always comes first.
+- 主面板实时显示每个助手的当前工作、生命、背包数量、排队任务、战斗后恢复任务及最近失败原因。
+- The main panel shows each companion's live work, health, inventory count, queued work, post-combat resume task and recent failure reason.
+- 每个助手可设置32–512格的自主搜索半径，维修、燃料、炮塔、生产和待机采矿只搜索其当前位置周围的指定范围。
+- Each companion has a 32–512 tile autonomous search radius applied to repair, fuel, turrets, production and idle mining around its current position.
 
 - 可在地图上依次设置多个自定义巡逻点，向全部或单个助手下达循环巡逻路线；助手会沿途战斗并在战后恢复路线。
 - Define multiple ordered patrol points on the map and assign the looping route to all companions or an individual; companions fight along the way and resume the route afterward.
@@ -71,6 +75,7 @@ This enhanced edition continues development from the mod code in Agentic-Factori
 - Different products can be mapped to different chests, and companions remember each product-to-chest sorting rule.
 
 - 自动检查燃料目标数量，依次给多个设备补充；优先使用助手背包或己方箱子中的煤炭，没有可用煤炭时才使用其他兼容燃料，全部缺少时会寻找煤矿并实际开采。
+- 从箱子取燃料时会汇总个人搜索范围内的兼容设备需求，一次尽量带够整批燃料后连续补充，避免每补一台就返回箱子。
 - Automatically checks target fuel levels and services multiple machines; when neither inventories nor chests contain fuel, the companion finds and physically mines coal.
 
 - 主动寻找受损的己方设备并连续维修；优先使用助手背包里的修理包，没有时会走到设备附近的己方箱子取用，绝不凭空生成。

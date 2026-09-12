@@ -15,6 +15,11 @@ local smelting_categories_by_item
 local WORK_ORDER = { "repair", "refuel", "turret", "smelt", "patrol", "mine" }
 local DEFAULT_PRIORITY = { repair = 1, refuel = 2, turret = 3, smelt = 4, patrol = 4, mine = 4 }
 
+local function work_radius(name)
+  local saved = storage.work_settings and storage.work_settings[name]
+  return math.max(32, math.min(512, math.floor(tonumber(saved and saved.radius) or 256)))
+end
+
 local function priority(name, work)
   local saved = storage.work_priorities and storage.work_priorities[name]
   local value = saved and saved[work]
@@ -58,14 +63,14 @@ local function smelting_items()
   return smelting_categories_by_item
 end
 
-local function autonomous_smelting_task(c)
+local function autonomous_smelting_task(c, radius)
   local available = {}
   for _, stack in ipairs(c.get_main_inventory().get_contents()) do
     available[stack.name] = (available[stack.name] or 0) + stack.count
   end
   for _, box in ipairs(c.surface.find_entities_filtered({
     position = c.position,
-    radius = AUTO_SMELT_RADIUS,
+    radius = radius or AUTO_SMELT_RADIUS,
     force = c.force,
     type = { "container", "logistic-container" },
   })) do
@@ -80,7 +85,7 @@ local function autonomous_smelting_task(c)
   local candidates = smelting_items()
   local furnaces = c.surface.find_entities_filtered({
     position = c.position,
-    radius = AUTO_SMELT_RADIUS,
+    radius = radius or AUTO_SMELT_RADIUS,
     force = c.force,
     type = "furnace",
   })
@@ -118,11 +123,11 @@ local function autonomous_smelting_task(c)
   }
 end
 
-local function random_minable(c)
+local function random_minable(c, radius)
   local list = {}
   for _, e in ipairs(c.surface.find_entities_filtered({
     position = c.position,
-    radius = 20,
+    radius = math.min(tonumber(radius) or 20, 64),
     type = { "resource", "tree", "simple-entity" },
   })) do
     if e.valid and e.prototype.mineable_properties.minable then list[#list + 1] = e end
@@ -175,25 +180,26 @@ function M.update()
       local c = companion.get(name)
       if c then
         local task
+        local radius = work_radius(name)
         local enemy = nearby_enemy(c)
         if enemy and equipment.auto_arm(c) then
           task = { type = "fight", target = { x = c.position.x, y = c.position.y }, radius = 30 }
         else
           for _, work in ipairs(ordered_work(name)) do
-            if work.key == "repair" and assigned.repair < 2 and repair.has_work(c, 256) then
-              task = { type = "keep_repaired", radius = 256, max_empty_scans = 1 }
+            if work.key == "repair" and assigned.repair < 2 and repair.has_work(c, radius) then
+              task = { type = "keep_repaired", radius = radius, max_empty_scans = 1 }
             elseif work.key == "refuel" and assigned.refuel < 2
-                and refuel.has_work(c, 256, storage.autonomy_fuel_target or 10) then
-              task = { type = "keep_fueled", radius = 256,
+                and refuel.has_work(c, radius, storage.autonomy_fuel_target or 10) then
+              task = { type = "keep_fueled", radius = radius,
                 top_up_count = storage.autonomy_fuel_target or 10, max_empty_scans = 1 }
             elseif work.key == "turret" and assigned.turret < 2 then
-              task = turret_supply.find_task(c, 256, storage.autonomy_turret_ammo_target or 10)
+              task = turret_supply.find_task(c, radius, storage.autonomy_turret_ammo_target or 10)
             elseif work.key == "smelt" and assigned.smelt < 2 then
-              task = autonomous_smelting_task(c)
+              task = autonomous_smelting_task(c, radius)
             elseif work.key == "patrol" and assigned.patrol < 2 then
               task = { type = "patrol", radius = 12, rounds = 1 }
             elseif work.key == "mine" and assigned.mine < 2 then
-              local target = random_minable(c)
+              local target = random_minable(c, radius)
               if target then
                 task = target.type == "resource"
                   and { type = "mine", resource = target.name, count = 20 }
