@@ -205,6 +205,75 @@ local AUTO_WEAPON_PAIRS = {
   { "flamethrower", "flamethrower-ammo" },
 }
 
+local AUTO_ARMORS = {
+  "mech-armor", "power-armor-mk2", "power-armor", "modular-armor",
+  "heavy-armor", "light-armor",
+}
+
+local function current_armor(c)
+  local name
+  pcall(function()
+    local inv = c.get_inventory(defines.inventory.character_armor)
+    if inv and #inv > 0 and inv[1].valid_for_read then name = inv[1].name end
+  end)
+  return name
+end
+
+-- Never replace worn armor automatically: it may contain an equipment grid.
+function M.auto_equip_armor(c)
+  if current_armor(c) then return true end
+  local main = c.get_main_inventory()
+  for _, name in ipairs(AUTO_ARMORS) do
+    if prototypes.item[name] and main.get_item_count(name) > 0 then
+      local ok = pcall(M.equip, { armor = name })
+      if ok and current_armor(c) then return true end
+    end
+  end
+  return false
+end
+
+function M.find_armor_chest(c, radius)
+  if M.auto_equip_armor(c) then return nil end
+  local best, best_rank, best_distance
+  for _, box in ipairs(c.surface.find_entities_filtered({
+    position = c.position, radius = radius or 256, force = c.force,
+    type = { "container", "logistic-container" },
+  })) do
+    local inv = box.get_inventory(defines.inventory.chest)
+    if inv then
+      for rank, name in ipairs(AUTO_ARMORS) do
+        if prototypes.item[name] and inv.get_item_count(name) > 0 then
+          local dx, dy = box.position.x - c.position.x, box.position.y - c.position.y
+          local distance = dx * dx + dy * dy
+          if not best or rank < best_rank or (rank == best_rank and distance < best_distance) then
+            best, best_rank, best_distance = box, rank, distance
+          end
+          break
+        end
+      end
+    end
+  end
+  return best
+end
+
+function M.take_armor_from_chest(c, box)
+  if current_armor(c) then return true end
+  if not (box and box.valid) then return false end
+  local inv = box.get_inventory(defines.inventory.chest)
+  local main = c.get_main_inventory()
+  if not inv then return false end
+  for _, name in ipairs(AUTO_ARMORS) do
+    if prototypes.item[name] and inv.get_item_count(name) > 0 then
+      local moved = main.insert({ name = name, count = 1 })
+      if moved > 0 then
+        inv.remove({ name = name, count = moved })
+        return M.auto_equip_armor(c)
+      end
+    end
+  end
+  return false
+end
+
 -- Find a same-force chest that can complete a usable gun/ammunition pair.
 -- The caller is responsible for physically walking into reach before taking.
 function M.find_armament_chest(c, radius)

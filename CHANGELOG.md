@@ -1,5 +1,23 @@
 # 更新日志 / Changelog
 
+## 0.15.6
+
+### 中文
+
+- 自动装备扩展为完整战斗装备准备：没有护甲时先穿上背包中最好的护甲，否则搜索个人工作区内的己方箱子并亲自领取。
+- 没有可用枪弹时继续自动寻找包含配套武器和弹药的箱子，走近后领取并装入正确槽位。
+- 已装备的枪没有任何可用弹药时，允许改用箱子中另一套能正常射击的枪弹组合。
+- 已经穿着护甲时不会自动换装，避免动力装甲装备网格及其中设备受影响。
+- 枪械、弹药和护甲全部来自真实背包或己方箱子；准备装备只在安全待机时执行，不打断手动任务。
+
+### English
+
+- Automatic readiness now includes armor: an unarmored helper equips the best carried armor or visits a friendly chest within its work area.
+- A helper without a usable gun/ammo pair still seeks a compatible supply chest, walks into reach and equips the correct slots.
+- If an equipped gun has no usable ammunition, the helper may switch to another complete weapon pair from storage.
+- Worn armor is never replaced automatically, protecting equipment grids and their contents.
+- Guns, ammunition and armor always come from real inventories; preparation runs only while safely idle and never interrupts manual work.
+
 ## 0.15.5
 
 ### 中文
