@@ -73,6 +73,12 @@ function M.tick(task)
   local c = companion.get()
   if not c then return { status = "failed", detail = "助手已不存在" } end
   local p = task._patrol
+  if task._resume_after_combat then
+    task._resume_after_combat = nil
+    p.enemy, p.combat_walk, p.arm_supply = nil, nil, nil
+    p.walk = {}
+    walk.begin(p.walk, c, p.points[p.index], 1.5)
+  end
   local armed = equipment.auto_arm(c)
 
   -- Patrols remain useful when supplies exist elsewhere in the base: walk to

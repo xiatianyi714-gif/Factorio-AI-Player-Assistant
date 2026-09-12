@@ -1,5 +1,16 @@
 # 更新日志 / Changelog
 
+## 0.9.17 — 战后任务可靠恢复 / Reliable Post-Combat Task Resumption
+
+- 修复主动维修被遭遇战打断后，助手仍等待已经失效的旧寻路请求、杀敌后不返回维修的问题。
+- Fixed autonomous repair waiting on an obsolete path request after an encounter, causing companions not to return to repair work after combat.
+
+- 遭遇战开始和结束时会清理被挂起任务的旧寻路状态，战斗结束后从助手当前位置重新规划到原任务目标，保留原任务及进度。
+- Obsolete navigation state is cleared when combat interrupts and restores work, so companions re-path from their post-combat position to the original target while preserving the task and its progress.
+
+- 同一恢复机制也适用于补燃料、施工、搬运等使用通用接近路径的任务；巡逻会重新前往战前的当前路线点。
+- The same recovery applies to refueling, construction, hauling, and other shared approach-based tasks; patrols re-path to their current pre-combat route point.
+
 ## 0.9.16 — 巡逻武器补给与路线保存 / Patrol Armament and Saved Routes
 
 - 巡逻助手没有可用枪械或弹药时，会搜索 256 格内的己方箱子，寻找成套枪械与兼容弹药或当前武器可用弹药，亲自取用、装备后继续原路线。

@@ -73,6 +73,18 @@ local function stop_body()
   end
 end
 
+local function discard_task_paths(name, task)
+  if not task then return end
+  task._approach = nil
+  task._path_result = nil
+  task._resume_after_combat = true
+  for request_id, entry in pairs(storage.path_requests or {}) do
+    if entry.name == name and entry.task_id == task.id then
+      storage.path_requests[request_id] = nil
+    end
+  end
+end
+
 -- finish() runs with the companion context already set to the task's owner.
 local function finish(task, status, detail)
   storage.tasks.records[task.id] = {
@@ -94,6 +106,10 @@ local function finish(task, status, detail)
     l.suspended = nil
     l.active = saved.active
     l.queue = saved.queue or {}
+    -- The old path request was answered (and intentionally ignored) while the
+    -- combat task owned this lane. Force restored work to plan from the
+    -- companion's new post-combat position instead of waiting on a dead path.
+    discard_task_paths(task.companion or companion.DEFAULT, l.active)
   end
 
   -- A failed step of a plan takes its dependent siblings down with it: later
@@ -269,6 +285,7 @@ function M.interrupt_for_combat(name, task)
   local l = lane(name)
   if l.active and l.active.type == "fight" then return false end
   if l.suspended then return false end
+  discard_task_paths(name, l.active)
   l.suspended = { active = l.active, queue = l.queue }
   l.active = nil
   l.queue = {}

@@ -35,6 +35,9 @@ This enhanced edition continues development from the mod code in Agentic-Factori
 - 自定义路线会按助手分别保存并可一键重新使用；巡逻中缺枪或弹药时，助手会从己方箱子取得兼容装备后继续路线。
 - Custom routes are saved per companion and can be restarted with one click; patrolling companions retrieve compatible guns or ammunition from friendly chests before resuming their route.
 
+- 遭遇战只会临时挂起维修、补给、施工或巡逻；战斗结束后助手会从当前位置重新寻路并恢复原任务进度。
+- Encounters temporarily suspend repairs, supply, construction, or patrol work; after combat, companions re-path from their current position and resume the original task progress.
+
 - 跟随、原地镇守、巡逻、主动清理敌人和停止命令。
 - Follow, hold position, patrol, clear nearby enemies, and stop commands.
 
