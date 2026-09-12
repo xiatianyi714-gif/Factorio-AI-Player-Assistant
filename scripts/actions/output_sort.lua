@@ -18,6 +18,13 @@ local function distance_sq(a, b)
   return x * x + y * y
 end
 
+local function output_blocked(entity, inv)
+  local blocked = false
+  pcall(function() blocked = entity.status == defines.entity_status.full_output end)
+  if not blocked then pcall(function() blocked = inv and inv.is_full() end) end
+  return blocked
+end
+
 function M.start(task)
   companion.require_companion()
   task.batch = math.max(1, math.min(math.floor(tonumber(task.batch) or 50), 1000))
@@ -37,7 +44,7 @@ local function choose_job(c, task)
     if source and source.valid and destination and destination.valid then
       local inv = output_inventory(source)
       local ready = inv and inv.get_item_count(route.item) > 0
-      if ready and task.only_when_full then pcall(function() ready = inv.is_full() end) end
+      if ready and task.only_when_full then ready = output_blocked(source, inv) end
       local accepts = false
       pcall(function() accepts = destination.can_insert({ name = route.item, count = 1 }) end)
       local key = task.direct_route_key or ("direct:" .. tostring(source.unit_number) .. ":" .. route.item)
@@ -64,7 +71,7 @@ local function choose_job(c, task)
       local free = not lock or game.tick - (lock.tick or 0) > LOCK_TICKS or lock.name == companion.context()
       local ready = count > 0
       if ready and task.only_when_full then
-        pcall(function() ready = inv.is_full() end)
+        ready = output_blocked(source, inv)
       end
       if ready and accepts and free then
         local d = distance_sq(c.position, source.position)

@@ -1,5 +1,23 @@
 # 更新日志 / Changelog
 
+## 0.19.6
+
+### 中文
+
+- 修复箱子登记收纳物品后，生产设备已经因成品满而停机，但库存接口未报告所有槽位占满，导致助手不搬运的问题。
+- 现在同时识别原版设备的“成品已满”状态和物理库存满状态。
+- 空闲生产助手会优先检查自身背包，把与箱子清单匹配的真实物品送入可用目标箱。
+- 背包收纳同样遵守正常移动、伸手距离、箱子容量和助手预约，不会远程转移或复制物品。
+- 蓝图施工光标现在使用原版临时蓝图机制，放置或取消后直接销毁预览，不再往玩家背包多塞一份蓝图。
+
+### English
+
+- Fixed registered chests receiving no deliveries when a machine was stopped by full output but its inventory did not report every physical slot as full.
+- Both Factorio's full-output machine status and physical inventory fullness now trigger collection.
+- Idle production helpers first deposit real carried items that match a registered chest rule.
+- Carried-item storage still obeys walking, normal reach, chest capacity and reservations, with no remote transfer or item creation.
+- Blueprint placement now uses Factorio's temporary cursor-stack mechanism, so placing or cancelling destroys the preview instead of adding a duplicate blueprint to the player's inventory.
+
 ## 0.19.5
 
 ### 中文

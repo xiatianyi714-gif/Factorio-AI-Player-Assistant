@@ -384,6 +384,10 @@ function M.put_on_cursor(params)
     player.clear_cursor()
     error("蓝图复制到鼠标时失败")
   end
+  -- This is only a placement preview copied from the player's saved
+  -- blueprint. Factorio will destroy a temporary cursor stack when it is
+  -- cleared or cancelled instead of returning another blueprint to inventory.
+  player.cursor_stack_temporary = true
   return {
     label = chosen.label or "未命名蓝图",
     items_needed = norm.items_needed,

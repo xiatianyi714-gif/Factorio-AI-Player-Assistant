@@ -176,6 +176,41 @@ local function has_stock(c, item, center, radius)
   return false
 end
 
+local function output_blocked(entity, inv)
+  local blocked = false
+  pcall(function() blocked = entity.status == defines.entity_status.full_output end)
+  if not blocked then pcall(function() blocked = inv and inv.is_full() end) end
+  return blocked
+end
+
+local function find_carried_storage_task(c, radius, center)
+  local main = c.get_main_inventory()
+  local best, best_item, best_d
+  for chest_id, rec in pairs(chest_rules()) do
+    local destination = type(rec) == "table" and rec.entity
+    if not (destination and destination.valid) then
+      chest_rules()[chest_id] = nil
+    elseif destination.surface == c.surface and destination.force == c.force then
+      local d = distance_sq(destination.position, center)
+      if d <= radius * radius and reservations.available(destination, companion.context()) then
+        for item in pairs(rec.items or {}) do
+          if main.get_item_count(item) > 0 then
+            local accepts = false
+            pcall(function() accepts = destination.can_insert({ name = item, count = 1 }) end)
+            if accepts and (not best_d or d < best_d) then
+              best, best_item, best_d = destination, item, d
+            end
+          end
+        end
+      end
+    end
+  end
+  if not best then return nil end
+  return { type = "supply_input", item = best_item, count = main.get_item_count(best_item),
+    target = { x = best.position.x, y = best.position.y }, target_entity = best,
+    reservation_key = reservations.key(best), configured_storage = true }
+end
+
 local function find_output_task(c, radius, center)
   local best_key, best_d
   for route_key, route in pairs(storage.output_routes or {}) do
@@ -189,8 +224,7 @@ local function find_output_task(c, radius, center)
       if d <= radius * radius then
         local inv
         pcall(function() inv = source.get_output_inventory() end)
-        local full = false
-        pcall(function() full = inv and inv.is_full() end)
+        local full = output_blocked(source, inv)
         if full and inv.get_item_count(route.item) > 0 and (not best_d or d < best_d) then
           best_key, best_d = route_key, d
         end
@@ -215,8 +249,7 @@ local function find_output_task(c, radius, center)
       if source_d <= radius * radius then
         local inv
         pcall(function() inv = source.get_output_inventory() end)
-        local full = false
-        pcall(function() full = inv and inv.is_full() end)
+        local full = output_blocked(source, inv)
         if full then
           for _, stack in ipairs(inv.get_contents()) do
             for chest_id, chest_rec in pairs(chest_rules()) do
@@ -271,6 +304,8 @@ local function find_fuel_task(c, radius, center)
 end
 
 function M.find_task(c, radius, center)
+  local carried = find_carried_storage_task(c, radius, center)
+  if carried then return carried end
   -- A full output blocks production, so clear it before fetching more input.
   local output = find_output_task(c, radius, center)
   if output then return output end

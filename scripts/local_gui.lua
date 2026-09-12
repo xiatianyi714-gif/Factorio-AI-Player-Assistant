@@ -1902,13 +1902,11 @@ function M.on_tick()
       state.native_blueprint_queue_tick = nil
       state.native_blueprint_ghosts = {}
       if player and #ghosts > 0 then
-        -- put_on_cursor creates a temporary preview stack. Destroy that exact
-        -- temporary blueprint before switching tools; clear_cursor() would
-        -- move it into the inventory and duplicate the source blueprint.
+        -- Only clear our Factorio-marked temporary preview. If the player has
+        -- already changed to a real blueprint, leave that cursor untouched.
         pcall(function()
-          if player.cursor_stack and player.cursor_stack.valid_for_read
-              and player.cursor_stack.is_blueprint then
-            player.cursor_stack.clear()
+          if player.cursor_stack_temporary and player.is_cursor_blueprint() then
+            player.clear_cursor()
           end
         end)
         state.native_blueprint_active = false
