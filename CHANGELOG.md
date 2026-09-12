@@ -1,5 +1,23 @@
 # 更新日志 / Changelog
 
+## 0.17.0
+
+### 中文
+
+- 助手数量上限由 4 名提高到 10 名。
+- 管理页新增助手改名输入框；必须先在“指令对象”选择一名具体助手，然后输入新名称并确认。
+- 改名会同步迁移正在执行和排队的任务、战斗后恢复任务、寻路请求、目标预约、工作优先级、工作范围、巡逻路线及所有玩家的选择状态。
+- 头顶名称和地图标记会立即刷新；最初的主助手改名后不会错误生成新的 `AI`。
+- 新增助手会选择尚未使用的默认编号，已有助手改名或删除后也不会发生名称冲突。
+
+### English
+
+- Increased the companion limit from four to ten.
+- Added a rename field to Manage; select one specific companion as the command target, enter a new name, and confirm.
+- Renaming migrates active and queued work, post-combat suspended work, path requests, reservations, priorities, work areas, patrol routes and every player's selection state.
+- Overhead labels and map tags refresh immediately, and renaming the original primary companion does not accidentally spawn a new `AI`.
+- New companions choose an unused default number, avoiding collisions after renames or removals.
+
 ## 0.16.2
 
 ### 中文

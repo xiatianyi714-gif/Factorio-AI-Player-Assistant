@@ -151,6 +151,10 @@ local function make_gui(player)
   manage_buttons.add({ type = "button", name = PREFIX .. "spawn", caption = T("增加 AI", "Add AI") })
   manage_buttons.add({ type = "button", name = PREFIX .. "remove", caption = T("减少 AI", "Remove AI") })
   manage_buttons.add({ type = "button", name = PREFIX .. "equip", caption = T("装备现有武器", "Equip weapons") })
+  manage.add({ type = "label", caption = T("助手改名（请先选择单个助手）", "Rename companion (select one first)") })
+  local rename = manage.add({ type = "flow", name = PREFIX .. "rename_controls", direction = "horizontal" })
+  rename.add({ type = "textfield", name = PREFIX .. "rename_text", text = "" })
+  rename.add({ type = "button", name = PREFIX .. "rename", caption = T("确认改名", "Rename") })
   manage.add({ type = "label", caption = T("一键职业模板（应用到当前指令对象）", "One-click roles (applied to command target)") })
   local roles = manage.add({ type = "table", column_count = 2 })
   roles.add({ type = "button", name = PREFIX .. "role_maintenance", caption = T("维护员", "Maintainer") })
@@ -731,8 +735,13 @@ end
 
 local function add_companion(player)
   local names = companion.names()
-  if #names >= 4 then error("最多只能有 4 个 AI 助手") end
-  local name = #names == 0 and companion.DEFAULT or ("AI" .. tostring(#names + 1))
+  if #names >= companion.MAX_COMPANIONS then error("最多只能有 10 个 AI 助手") end
+  local name
+  for i = 1, companion.MAX_COMPANIONS do
+    local candidate = i == 1 and companion.DEFAULT or ("AI" .. tostring(i))
+    if not companion.record(candidate) then name = candidate; break end
+  end
+  if not name then error("没有可用的默认助手名称，请先为现有助手改名") end
   companion.set_context(name)
   companion.spawn({ name = name, near_player = player.name })
   companion.set_context(nil)
@@ -1230,6 +1239,18 @@ function M.on_gui_click(event)
       local removed = remove_companion(player)
       refresh_target_selector(player)
       status(player, removed .. T(" 已移除；它的物品已掉落在原地", " removed; its items were dropped at its position"))
+    elseif name == PREFIX .. "rename" then
+      local state = storage.local_gui[player.index]
+      local old_name = state and state.command_target
+      if not old_name or not companion.record(old_name) then
+        error(T("请先在指令对象中选择一个助手，不能对“全部助手”改名", "Select one companion first; All companions cannot be renamed"))
+      end
+      local controls = player.gui.left[PREFIX .. "panel"][PREFIX .. "manage_section"][PREFIX .. "rename_controls"]
+      local input = controls and controls[PREFIX .. "rename_text"]
+      local new_name = companion.rename(old_name, input and input.text or "")
+      if input and input.valid then input.text = "" end
+      refresh_target_selector(player)
+      status(player, string.format(T("%s 已改名为 %s", "%s renamed to %s"), old_name, new_name))
     elseif name == PREFIX .. "equip" then
       ensure_companion(player)
       local equipped = 0

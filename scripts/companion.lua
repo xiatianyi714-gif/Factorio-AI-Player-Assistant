@@ -8,7 +8,7 @@ local starter = require("scripts.starter")
 local M = {}
 
 M.DEFAULT = "AI"
-local MAX_COMPANIONS = 4
+M.MAX_COMPANIONS = 10
 local MOVEMENT_SPEED_SETTING = "agentic-companion-movement-speed"
 local DEFAULT_MOVEMENT_SPEED = 1.0
 
@@ -31,7 +31,7 @@ function M.set_context(name)
 end
 
 function M.context()
-  return current_name or M.DEFAULT
+  return current_name or storage.companion_primary or M.DEFAULT
 end
 
 local function records()
@@ -186,6 +186,7 @@ function M.remove(name)
   local ent = rec and rec.entity
   if not (ent and ent.valid) then
     records()[name] = nil
+    if storage.companion_primary == name then storage.companion_primary = next(records()) end
     return false
   end
   spill_inventory(ent, defines.inventory.character_main)
@@ -196,6 +197,7 @@ function M.remove(name)
   pcall(function() if rec.map_tag and rec.map_tag.valid then rec.map_tag.destroy() end end)
   ent.destroy({ raise_destroy = true })
   records()[name] = nil
+  if storage.companion_primary == name then storage.companion_primary = next(records()) end
   return true
 end
 
@@ -291,11 +293,78 @@ function M.update_map_tag()
   end
 end
 
+local function rename_task(task, old_name, new_name)
+  if task and task.companion == old_name then task.companion = new_name end
+end
+
+-- Rename the persistent identity rather than only its label. Active/queued
+-- work, path requests, reservations, per-helper settings and GUI selections
+-- all follow the new name, so renaming is safe even during an active task.
+function M.rename(old_name, new_name)
+  if type(old_name) ~= "string" or not records()[old_name] then error("请选择一个存在的助手") end
+  if type(new_name) ~= "string" then error("新名称无效") end
+  new_name = new_name:gsub("^%s+", ""):gsub("%s+$", "")
+  if new_name == "" then error("助手名称不能为空") end
+  if #new_name > 30 then error("助手名称不能超过 30 个字符") end
+  if new_name == old_name then return new_name end
+  if records()[new_name] then error("已经有同名助手") end
+
+  local rec = records()[old_name]
+  records()[old_name], records()[new_name] = nil, rec
+  if storage.companion_primary == old_name or (not storage.companion_primary and old_name == M.DEFAULT) then
+    storage.companion_primary = new_name
+  end
+  if current_name == old_name then current_name = new_name end
+
+  local lanes = storage.tasks and storage.tasks.by_companion
+  if lanes and lanes[old_name] then
+    local lane = lanes[old_name]
+    lanes[old_name], lanes[new_name] = nil, lane
+    rename_task(lane.active, old_name, new_name)
+    for _, task in ipairs(lane.queue or {}) do rename_task(task, old_name, new_name) end
+    if lane.suspended then
+      rename_task(lane.suspended.active, old_name, new_name)
+      for _, task in ipairs(lane.suspended.queue or {}) do rename_task(task, old_name, new_name) end
+    end
+  end
+  for _, request in pairs(storage.path_requests or {}) do
+    if request.name == old_name then request.name = new_name end
+  end
+  for _, reservation in pairs(storage.work_reservations or {}) do
+    if reservation.owner == old_name then reservation.owner = new_name end
+  end
+  for _, lock in pairs(storage.output_route_locks or {}) do
+    if lock.name == old_name then lock.name = new_name end
+  end
+  for _, field in ipairs({ "work_priorities", "work_settings" }) do
+    local values = storage[field]
+    if values and values[old_name] ~= nil then
+      values[new_name], values[old_name] = values[old_name], nil
+    end
+  end
+  for _, gui in pairs(storage.local_gui or {}) do
+    if gui.command_target == old_name then gui.command_target = new_name end
+    for i, name in ipairs(gui.priority_names or {}) do
+      if name == old_name then gui.priority_names[i] = new_name end
+    end
+  end
+
+  pcall(function() if rec.label and rec.label.valid then rec.label.destroy() end end)
+  pcall(function() if rec.map_tag and rec.map_tag.valid then rec.map_tag.destroy() end end)
+  rec.label, rec.map_tag = nil, nil
+  if rec.entity and rec.entity.valid then
+    rec.entity.color = color_for(new_name)
+    attach_label(rec, new_name, rec.entity)
+  end
+  M.update_map_tag()
+  return new_name
+end
+
 -- Issue/refresh the default companion's starter blueprint books. Runs
 -- on_nth_tick (wired in control.lua) so a save loaded with regenerated
 -- blueprint data picks the books up without a respawn — must never raise.
 function M.ensure_starter_books()
-  local rec = records()[M.DEFAULT]
+  local rec = records()[storage.companion_primary or M.DEFAULT]
   local ent = rec and rec.entity
   if not (ent and ent.valid) then return end
   pcall(starter.ensure, rec, ent)
@@ -316,8 +385,8 @@ function M.spawn(params)
       movement_speed = M.movement_speed_multiplier(),
     }
   end
-  if not records()[name] and count_companions() >= MAX_COMPANIONS then
-    error("max " .. MAX_COMPANIONS .. " companions — currently: " .. table.concat(M.names(), ", "))
+  if not records()[name] and count_companions() >= M.MAX_COMPANIONS then
+    error("max " .. M.MAX_COMPANIONS .. " companions — currently: " .. table.concat(M.names(), ", "))
   end
 
   local surface, anchor, force
@@ -350,6 +419,7 @@ function M.spawn(params)
 
   local rec = records()[name] or {}
   records()[name] = rec
+  storage.companion_primary = storage.companion_primary or name
   rec.entity = ent
   rec.unit_number = ent.unit_number
   rec.respawn_tick = nil

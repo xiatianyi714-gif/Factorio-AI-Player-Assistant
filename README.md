@@ -1,6 +1,6 @@
 # 异星工厂 AI 玩家助手 / Factorio AI Player Assistant
 
-> 当前版本 / Current version: 0.16.2 — 修复 Factorio 2.0 中战斗气泡触发时可能导致游戏中断的问题。
+> 当前版本 / Current version: 0.17.0 — 助手上限提高到 10 名，并支持安全改名。
 
 一个完全在 Factorio 2.0 游戏内运行的多助手模组，不需要外部 AI、API、Codex 或 Token。助手像真实角色一样移动、采矿、搬运、建造和战斗，所有物品都来自实际背包、箱子或采集行为。
 
@@ -22,8 +22,8 @@ This enhanced edition continues development from the mod code in Agentic-Factori
 - 玩家或己方建筑遭敌人攻击时，同一地表的所有助手会暂时放下当前工作、集结到遇袭点共同防守；战斗结束后恢复各自原来的任务。
 - When the player or a friendly structure is attacked, every companion on that surface suspends its current work and rallies to defend the attacked area, then resumes the previous task after combat.
 
-- 最多生成四名助手，可向全部助手或单个助手下达命令。
-- Spawn up to four companions and command all of them or an individual companion.
+- 最多生成十名助手，可向全部助手或单个助手下达命令；管理页可为选中的单个助手改名，任务、设置、路线和地图标记会随名称完整迁移。
+- Spawn up to ten companions and command all of them or an individual companion. A selected helper can be safely renamed from Manage, with tasks, settings, routes and map markers migrated to the new identity.
 
 - 助手死亡后等待 10 秒在玩家附近复活，再自动返回死亡地点取回自己的遗留物品；死亡物品不会复制。
 - Companions respawn near the player after 10 seconds, then automatically return to recover their own death items without duplication.

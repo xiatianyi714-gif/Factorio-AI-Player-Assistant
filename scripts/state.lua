@@ -35,6 +35,9 @@ function M.init()
     end
     storage.companion = nil
   end
+  if not storage.companion_primary or not storage.companions[storage.companion_primary] then
+    storage.companion_primary = next(storage.companions)
+  end
 
   -- pathfinder bookkeeping: request id -> {name, task_id} (see actions/walk.lua)
   storage.path_requests = {}
