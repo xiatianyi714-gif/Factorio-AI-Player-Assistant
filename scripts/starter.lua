@@ -9,7 +9,8 @@
 -- causes like a full inventory heal themselves) and reported once per data
 -- version through M.notify (wired to events.push by control.lua — starter
 -- can't require scripts.events itself: require cycle via companion.lua).
-local data = require("scripts.starter_blueprints")
+local data_zh = require("scripts.starter_blueprints_zh")
+local data_en = require("scripts.starter_blueprints_en")
 
 local M = {}
 
@@ -32,6 +33,7 @@ end
 -- its inventory is empty) bypasses the version check and the retry backoff.
 -- Returns true when the books are present/issued.
 function M.ensure(rec, ent, force)
+  local data = storage.local_language == "en" and data_en or data_zh
   if not force then
     if rec.starter_book_version == data.version then return true end
     local att = rec.starter_book_attempt
@@ -71,7 +73,8 @@ function M.ensure(rec, ent, force)
     -- so a re-run never duplicates), plus the legacy single starter book.
     local stale = { [LEGACY_LABEL] = true }
     for _, label in ipairs(rec.starter_book_labels or {}) do stale[label] = true end
-    for _, book in ipairs(data.books) do stale[book.label] = true end
+    for _, book in ipairs(data_zh.books) do stale[book.label] = true end
+    for _, book in ipairs(data_en.books) do stale[book.label] = true end
     for i = 1, #inv do
       local stack = inv[i]
       if stack.valid_for_read and stack.is_blueprint_book then

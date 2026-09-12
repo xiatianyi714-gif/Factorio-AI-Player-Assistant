@@ -7,7 +7,29 @@ local M = {}
 local PREFIX = "agentic_local_"
 local command_names
 
+local function english()
+  return storage.local_language == "en"
+end
+
+local function T(zh, en)
+  return english() and en or zh
+end
+
 local function command_speech(text)
+  if english() then
+    if string.find(text, "following", 1, true) then return "Follow me!" end
+    if string.find(text, "holding", 1, true) then return "Hold this position!" end
+    if string.find(text, "patrolling", 1, true) then return "Patrol the area!" end
+    if string.find(text, "clearing", 1, true) then return "Clear nearby enemies!" end
+    if string.find(text, "Refueling", 1, true) then return "Check the machines and refuel them!" end
+    if string.find(text, "repairing", 1, true) then return "Find and repair damaged machines!" end
+    if string.find(text, "mine", 1, true) then return "Collect the selected resources!" end
+    if string.find(text, "Stopped", 1, true) then return "Stop the current orders!" end
+    if string.find(text, "ghosts", 1, true) then return "Start construction!" end
+    if string.find(text, "structures", 1, true) then return "Deconstruct these targets!" end
+    if string.find(text, "Equipped", 1, true) then return "Check and equip weapons!" end
+    return nil
+  end
   if string.find(text, "跟随", 1, true) then return "跟着我！" end
   if string.find(text, "镇守", 1, true) then return "守住这里！" end
   if string.find(text, "巡逻", 1, true) then return "去附近巡逻！" end
@@ -37,7 +59,7 @@ end
 local function status(player, text)
   local failed = string.find(text, "失败", 1, true) ~= nil
   if not failed then
-    player.print({ "", "[本地助手] ", text })
+    player.print({ "", T("[本地助手] ", "[Local Companion] "), text })
     local speech = command_speech(text)
     if speech then
       pcall(function()
@@ -57,43 +79,44 @@ end
 
 local function make_gui(player)
   if not player.gui.top[PREFIX .. "toggle"] then
-    player.gui.top.add({ type = "button", name = PREFIX .. "toggle", caption = "助手命令", tooltip = "纯本地控制，不使用 AI 或 Token" })
+    player.gui.top.add({ type = "button", name = PREFIX .. "toggle", caption = T("助手命令", "Companion Commands"), tooltip = T("纯本地控制，不使用 AI 或 Token", "Fully local control; no AI or tokens") })
   end
   if player.gui.left[PREFIX .. "panel"] then return end
-  local frame = player.gui.left.add({ type = "frame", name = PREFIX .. "panel", caption = "战斗施工助手", direction = "vertical" })
+  local frame = player.gui.left.add({ type = "frame", name = PREFIX .. "panel", caption = T("战斗施工助手", "Combat & Construction Companions"), direction = "vertical" })
   frame.visible = false
-  frame.add({ type = "label", caption = "指令对象" })
-  local target_items = { "全部助手" }
+  frame.add({ type = "button", name = PREFIX .. "language", caption = T("语言：中文（点击切换英文）", "Language: English (click for Chinese)") })
+  frame.add({ type = "label", caption = T("指令对象", "Command target") })
+  local target_items = { T("全部助手", "All companions") }
   for _, name in ipairs(companion.names()) do target_items[#target_items + 1] = name end
   frame.add({ type = "drop-down", name = PREFIX .. "target", items = target_items, selected_index = 1 })
-  frame.add({ type = "label", caption = "补给只从助手能伸手够到的己方箱子获取" })
+  frame.add({ type = "label", caption = T("补给只从助手能伸手够到的己方箱子获取", "Supplies are taken only from reachable friendly chests") })
   local supply = frame.add({ type = "table", name = PREFIX .. "supply_controls", column_count = 2 })
-  supply.add({ type = "button", name = PREFIX .. "spawn", caption = "增加 AI" })
-  supply.add({ type = "button", name = PREFIX .. "remove", caption = "减少 AI" })
-  supply.add({ type = "button", name = PREFIX .. "equip", caption = "装备现有武器" })
-  supply.add({ type = "button", name = PREFIX .. "refuel", caption = "补齐燃料" })
-  supply.add({ type = "button", name = PREFIX .. "repair", caption = "主动维修" })
-  supply.add({ type = "label", caption = "维修包可从设备附近己方箱子获取" })
-  supply.add({ type = "label", caption = "设备燃料目标数量" })
+  supply.add({ type = "button", name = PREFIX .. "spawn", caption = T("增加 AI", "Add AI") })
+  supply.add({ type = "button", name = PREFIX .. "remove", caption = T("减少 AI", "Remove AI") })
+  supply.add({ type = "button", name = PREFIX .. "equip", caption = T("装备现有武器", "Equip weapons") })
+  supply.add({ type = "button", name = PREFIX .. "refuel", caption = T("补齐燃料", "Refuel machines") })
+  supply.add({ type = "button", name = PREFIX .. "repair", caption = T("主动维修", "Repair machines") })
+  supply.add({ type = "label", caption = T("维修包可从设备附近己方箱子获取", "Repair packs may be collected from friendly chests near a machine") })
+  supply.add({ type = "label", caption = T("设备燃料目标数量", "Target fuel count") })
   supply.add({ type = "textfield", name = PREFIX .. "fuel_count", text = tostring(storage.autonomy_fuel_target or 10), numeric = true, allow_decimal = false, allow_negative = false })
-  supply.add({ type = "label", caption = "每次投入数量" })
+  supply.add({ type = "label", caption = T("每次投入数量", "Input amount per trip") })
   supply.add({ type = "textfield", name = PREFIX .. "supply_count", text = "50", numeric = true, allow_decimal = false, allow_negative = false })
-  supply.add({ type = "label", caption = "每采集多少去投" })
+  supply.add({ type = "label", caption = T("每采集多少去投", "Harvest amount before feeding") })
   supply.add({ type = "textfield", name = PREFIX .. "harvest_count", text = "50", numeric = true, allow_decimal = false, allow_negative = false })
-  frame.add({ type = "label", caption = "移动与战斗" })
+  frame.add({ type = "label", caption = T("移动与战斗", "Movement & combat") })
   local move = frame.add({ type = "table", column_count = 2 })
-  move.add({ type = "button", name = PREFIX .. "follow", caption = "跟随我" })
-  move.add({ type = "button", name = PREFIX .. "hold", caption = "原地镇守" })
-  move.add({ type = "button", name = PREFIX .. "patrol", caption = "巡逻" })
-  move.add({ type = "button", name = PREFIX .. "attack", caption = "清理敌人" })
-  move.add({ type = "button", name = PREFIX .. "stop", caption = "停止命令" })
-  frame.add({ type = "label", caption = "施工（材料取自助手背包）" })
+  move.add({ type = "button", name = PREFIX .. "follow", caption = T("跟随我", "Follow me") })
+  move.add({ type = "button", name = PREFIX .. "hold", caption = T("原地镇守", "Hold position") })
+  move.add({ type = "button", name = PREFIX .. "patrol", caption = T("巡逻", "Patrol") })
+  move.add({ type = "button", name = PREFIX .. "attack", caption = T("清理敌人", "Clear enemies") })
+  move.add({ type = "button", name = PREFIX .. "stop", caption = T("停止命令", "Stop orders") })
+  frame.add({ type = "label", caption = T("施工（材料取自助手背包）", "Construction (materials from companion inventories)") })
   local build = frame.add({ type = "table", column_count = 2 })
-  build.add({ type = "button", name = PREFIX .. "build", caption = "框选建造蓝图" })
-  build.add({ type = "button", name = PREFIX .. "demolish", caption = "框选拆除" })
-  build.add({ type = "button", name = PREFIX .. "mine_supply", caption = "采集·生产·收纳" })
-  build.add({ type = "button", name = PREFIX .. "blueprints", caption = "蓝图施工" })
-  frame.add({ type = "label", name = PREFIX .. "status", caption = "就绪" })
+  build.add({ type = "button", name = PREFIX .. "build", caption = T("框选建造蓝图", "Build selected ghosts") })
+  build.add({ type = "button", name = PREFIX .. "demolish", caption = T("框选拆除", "Deconstruct selection") })
+  build.add({ type = "button", name = PREFIX .. "mine_supply", caption = T("采集·生产·收纳", "Mine · Produce · Store") })
+  build.add({ type = "button", name = PREFIX .. "blueprints", caption = T("蓝图施工", "Blueprint construction") })
+  frame.add({ type = "label", name = PREFIX .. "status", caption = T("就绪", "Ready") })
 end
 
 local function close_blueprint_picker(player)
@@ -110,15 +133,15 @@ local function show_blueprint_materials(player, info)
   close_blueprint_materials(player)
   local frame = player.gui.screen.add({
     type = "frame", name = PREFIX .. "blueprint_materials",
-    caption = info.label .. "：施工材料", direction = "vertical",
+    caption = info.label .. T("：施工材料", ": Construction Materials"), direction = "vertical",
   })
   frame.auto_center = true
-  frame.add({ type = "label", caption = "建筑虚影：" .. tostring(info.entity_count) .. " 个" })
+  frame.add({ type = "label", caption = T("建筑虚影：", "Ghost entities: ") .. tostring(info.entity_count) .. T(" 个", "") })
   local table_gui = frame.add({ type = "table", column_count = 4 })
-  table_gui.add({ type = "label", caption = "材料" })
-  table_gui.add({ type = "label", caption = "需要" })
-  table_gui.add({ type = "label", caption = "助手现有" })
-  table_gui.add({ type = "label", caption = "缺少" })
+  table_gui.add({ type = "label", caption = T("材料", "Material") })
+  table_gui.add({ type = "label", caption = T("需要", "Required") })
+  table_gui.add({ type = "label", caption = T("助手现有", "Available") })
+  table_gui.add({ type = "label", caption = T("缺少", "Missing") })
   local names = {}
   for item in pairs(info.items_needed or {}) do names[#names + 1] = item end
   table.sort(names)
@@ -134,7 +157,7 @@ local function show_blueprint_materials(player, info)
     table_gui.add({ type = "label", caption = tostring(have) })
     table_gui.add({ type = "label", caption = tostring(math.max(0, needed - have)) })
   end
-  frame.add({ type = "button", name = PREFIX .. "blueprint_materials_close", caption = "关闭材料清单" })
+  frame.add({ type = "button", name = PREFIX .. "blueprint_materials_close", caption = T("关闭材料清单", "Close material list") })
 end
 
 local function close_mining_picker(player)
@@ -171,7 +194,7 @@ local function select_output_destination(player, source, item)
   close_output_picker(player)
   player.clear_cursor()
   player.cursor_stack.set_stack({ name = "agentic-local-output-destination-tool", count = 1 })
-  status(player, "已选择成品 " .. item .. "；请框选它对应的己方箱子")
+  status(player, T("已选择成品 ", "Selected product ") .. item .. T("；请框选它对应的己方箱子", "; select its destination chest"))
 end
 
 local function output_products(source, raw_item)
@@ -217,26 +240,26 @@ local function choose_output_product(player, source)
   if #products == 0 then error("无法识别该设备的成品；请先设置配方或等待它生产出一个成品") end
   if #products == 1 then select_output_destination(player, source, products[1]); return end
   close_output_picker(player)
-  local frame = player.gui.center.add({ type = "frame", name = PREFIX .. "output_picker", caption = "选择要分类收纳的成品", direction = "vertical" })
+  local frame = player.gui.center.add({ type = "frame", name = PREFIX .. "output_picker", caption = T("选择要分类收纳的成品", "Choose a product to sort") , direction = "vertical" })
   state.output_choices = { source = source, items = products }
   for i, item in ipairs(products) do
     frame.add({ type = "button", name = PREFIX .. "output_pick_" .. i, caption = prototypes.item[item].localised_name })
   end
-  frame.add({ type = "button", name = PREFIX .. "output_close", caption = "取消" })
+  frame.add({ type = "button", name = PREFIX .. "output_close", caption = T("取消", "Cancel") })
 end
 
 local function open_work_mode(player)
   close_work_mode(player)
   local frame = player.gui.center.add({
     type = "frame", name = PREFIX .. "work_mode",
-    caption = "选择采集、生产与收纳方式", direction = "vertical",
+    caption = T("选择采集、生产与收纳方式", "Choose mining, production and storage mode"), direction = "vertical",
   })
-  frame.add({ type = "button", name = PREFIX .. "work_full", caption = "采集 → 生产 → 收纳（全流程）" })
-  frame.add({ type = "button", name = PREFIX .. "work_both", caption = "只采集并投料" })
-  frame.add({ type = "button", name = PREFIX .. "work_mine", caption = "只采集" })
-  frame.add({ type = "button", name = PREFIX .. "work_supply", caption = "只生产投料" })
-  frame.add({ type = "button", name = PREFIX .. "work_output", caption = "只收纳成品" })
-  frame.add({ type = "button", name = PREFIX .. "work_close", caption = "取消" })
+  frame.add({ type = "button", name = PREFIX .. "work_full", caption = T("采集 → 生产 → 收纳（全流程）", "Mine → Produce → Store (full workflow)") })
+  frame.add({ type = "button", name = PREFIX .. "work_both", caption = T("只采集并投料", "Mine and feed only") })
+  frame.add({ type = "button", name = PREFIX .. "work_mine", caption = T("只采集", "Mining only") })
+  frame.add({ type = "button", name = PREFIX .. "work_supply", caption = T("只生产投料", "Production feeding only") })
+  frame.add({ type = "button", name = PREFIX .. "work_output", caption = T("只收纳成品", "Store outputs only") })
+  frame.add({ type = "button", name = PREFIX .. "work_close", caption = T("取消", "Cancel") })
 end
 
 local function reusable_target(target, item)
@@ -251,12 +274,12 @@ local function open_mining_destination(player, resource)
   local frame = player.gui.center.add({
     type = "frame",
     name = PREFIX .. "mining_destination",
-    caption = "选择 " .. resource .. " 的产物去向",
+    caption = T("选择 ", "Choose destination for ") .. resource .. T(" 的产物去向", ""),
     direction = "vertical",
   })
-  frame.add({ type = "button", name = PREFIX .. "mine_carry", caption = "随身携带" })
-  frame.add({ type = "button", name = PREFIX .. "mine_store", caption = "存入指定容器" })
-  frame.add({ type = "button", name = PREFIX .. "mine_destination_close", caption = "取消" })
+  frame.add({ type = "button", name = PREFIX .. "mine_carry", caption = T("随身携带", "Keep in inventory") })
+  frame.add({ type = "button", name = PREFIX .. "mine_store", caption = T("存入指定容器", "Store in selected chest") })
+  frame.add({ type = "button", name = PREFIX .. "mine_destination_close", caption = T("取消", "Cancel") })
 end
 
 local BASIC_RESOURCES = {
@@ -288,7 +311,7 @@ local function open_mining_picker(player)
   local function by_name(a, b) return a.resource < b.resource end
   table.sort(basic, by_name)
   table.sort(other, by_name)
-  local frame = player.gui.center.add({ type = "frame", name = PREFIX .. "mining_picker", caption = "选择采集的矿物", direction = "vertical" })
+  local frame = player.gui.center.add({ type = "frame", name = PREFIX .. "mining_picker", caption = T("选择采集的矿物", "Choose a resource to mine"), direction = "vertical" })
   local scroll = frame.add({ type = "scroll-pane" })
   scroll.style.maximal_height = 500
   storage.local_gui[player.index] = storage.local_gui[player.index] or {}
@@ -306,16 +329,16 @@ local function open_mining_picker(player)
       })
     end
   end
-  add_group("基础矿物", basic)
-  add_group("其他可采资源", other)
-  frame.add({ type = "button", name = PREFIX .. "mine_close", caption = "取消" })
+  add_group(T("基础矿物", "Basic ores"), basic)
+  add_group(T("其他可采资源", "Other resources"), other)
+  frame.add({ type = "button", name = PREFIX .. "mine_close", caption = T("取消", "Cancel") })
 end
 
 local function open_blueprint_picker(player)
   close_blueprint_picker(player)
   local result = blueprint.list({ player = player.name })
   if #result.blueprints == 0 then error("没有找到蓝图；请把蓝图或蓝图书放在玩家/助手物品栏中") end
-  local frame = player.gui.center.add({ type = "frame", name = PREFIX .. "blueprint_picker", caption = "选择要建造的蓝图", direction = "vertical" })
+  local frame = player.gui.center.add({ type = "frame", name = PREFIX .. "blueprint_picker", caption = T("选择要建造的蓝图", "Choose a blueprint to build"), direction = "vertical" })
   local scroll = frame.add({ type = "scroll-pane", name = PREFIX .. "blueprint_scroll" })
   scroll.style.maximal_height = 500
   storage.local_gui[player.index] = storage.local_gui[player.index] or {}
@@ -328,7 +351,7 @@ local function open_blueprint_picker(player)
       scroll.add({
         type = "button",
         name = PREFIX .. "bp_pick_" .. #state.blueprints,
-        caption = bp.label .. "（" .. tostring(bp.entity_count or 0) .. " 个建筑）",
+        caption = bp.label .. T("（", " (") .. tostring(bp.entity_count or 0) .. T(" 个建筑）", " entities)"),
       })
     end
   end
@@ -336,7 +359,7 @@ local function open_blueprint_picker(player)
     frame.destroy()
     error("找到的蓝图都没有名称；请先给蓝图命名")
   end
-  frame.add({ type = "button", name = PREFIX .. "bp_close", caption = "取消" })
+  frame.add({ type = "button", name = PREFIX .. "bp_close", caption = T("取消", "Cancel") })
 end
 
 local function ensure_companion(player)
@@ -355,7 +378,7 @@ local function refresh_target_selector(player)
   if not (selector and selector.valid) then return end
   storage.local_gui[player.index] = storage.local_gui[player.index] or {}
   local state = storage.local_gui[player.index]
-  local items = { "全部助手" }
+  local items = { T("全部助手", "All companions") }
   local selected = 1
   for _, name in ipairs(companion.names()) do
     items[#items + 1] = name
@@ -376,7 +399,7 @@ end
 
 local function command_label(player)
   local state = storage.local_gui[player.index]
-  return (state and state.command_target) or "全部助手"
+  return (state and state.command_target) or T("全部助手", "All companions")
 end
 
 local function configured_count(player, field, fallback, maximum)
@@ -516,7 +539,7 @@ local function open_supply_picker(player)
   for name, count in pairs(totals) do if count > 0 then names[#names + 1] = name end end
   table.sort(names)
   if #names == 0 then error("所选助手及其伸手可及的箱子中没有可投放的原材料") end
-  local frame = player.gui.center.add({ type = "frame", name = PREFIX .. "supply_picker", caption = "选择生产原材料（一组）", direction = "vertical" })
+  local frame = player.gui.center.add({ type = "frame", name = PREFIX .. "supply_picker", caption = T("选择生产原材料（一组）", "Choose production input (one stack)"), direction = "vertical" })
   local scroll = frame.add({ type = "scroll-pane" })
   scroll.style.maximal_height = 500
   storage.local_gui[player.index] = storage.local_gui[player.index] or {}
@@ -527,10 +550,10 @@ local function open_supply_picker(player)
     scroll.add({
       type = "button",
       name = PREFIX .. "supply_pick_" .. #state.supply_choices,
-      caption = { "", prototypes.item[name].localised_name, "（可用 ", totals[name], "）" },
+      caption = { "", prototypes.item[name].localised_name, T("（可用 ", " (available: "), totals[name], T("）", ")") },
     })
   end
-  frame.add({ type = "button", name = PREFIX .. "supply_close", caption = "取消" })
+  frame.add({ type = "button", name = PREFIX .. "supply_close", caption = T("取消", "Cancel") })
 end
 
 local function start_mining_jobs(player, pending, target)
@@ -561,9 +584,9 @@ local function start_mining_jobs(player, pending, target)
   companion.set_context(nil)
   storage.local_gui[player.index].pending_mining = nil
   if target then
-    status(player, string.format("已命令 %d 个助手采集 %s，完成后送往所选箱子", assigned, pending.resource))
+    status(player, string.format(T("已命令 %d 个助手采集 %s，完成后送往所选箱子", "Ordered %d companion(s) to mine %s and deliver it to the selected chest"), assigned, pending.resource))
   else
-    status(player, string.format("已命令 %d 个助手采集 %s，产物保留在各自背包", assigned, pending.resource))
+    status(player, string.format(T("已命令 %d 个助手采集 %s，产物保留在各自背包", "Ordered %d companion(s) to mine %s and keep it in their inventories"), assigned, pending.resource))
   end
 end
 
@@ -593,8 +616,9 @@ local function start_combined_jobs(player, pending, target)
   state.last_combined_targets[pending.product] = target
   state.pending_combined = nil
   player.clear_cursor()
-  status(player, string.format(
+  status(player, string.format(T(
     "已命令 %d 个助手循环工作：每采集 %d 次 %s，向目标投入最多 %d 个",
+    "Ordered %d companion(s) to loop: mine %d times for %s, then feed up to %d items"),
     assigned, pending.harvest_count, pending.resource, pending.supply_count))
 end
 
@@ -621,8 +645,8 @@ function M.on_gui_selection_changed(event)
   if not player or not element or not element.valid or element.name ~= PREFIX .. "target" then return end
   storage.local_gui[player.index] = storage.local_gui[player.index] or {}
   local selected = element.get_item(element.selected_index)
-  storage.local_gui[player.index].command_target = selected ~= "全部助手" and selected or nil
-  status(player, "当前指令对象：" .. selected)
+  storage.local_gui[player.index].command_target = element.selected_index > 1 and selected or nil
+  status(player, T("当前指令对象：", "Current command target: ") .. selected)
 end
 
 function M.on_gui_text_changed(event)
@@ -637,6 +661,25 @@ function M.on_gui_click(event)
   local element = event.element
   if not player or not element or not element.valid then return end
   local name = element.name
+  if name == PREFIX .. "language" then
+    storage.local_language = english() and "zh" or "en"
+    for _, who in ipairs(companion.names()) do
+      local rec = companion.record(who)
+      if rec then rec.starter_book_version = nil end
+    end
+    for _, online in pairs(game.connected_players) do
+      local old_panel = online.gui.left[PREFIX .. "panel"]
+      local was_visible = old_panel and old_panel.visible
+      if old_panel and old_panel.valid then old_panel.destroy() end
+      local old_toggle = online.gui.top[PREFIX .. "toggle"]
+      if old_toggle and old_toggle.valid then old_toggle.destroy() end
+      make_gui(online)
+      refresh_target_selector(online)
+      online.gui.left[PREFIX .. "panel"].visible = was_visible ~= false
+    end
+    status(player, T("界面和内置蓝图已切换为中文", "Interface and built-in blueprints switched to English"))
+    return
+  end
   if name == PREFIX .. "toggle" then
     local panel = player.gui.left[PREFIX .. "panel"]
     panel.visible = not panel.visible
@@ -692,7 +735,7 @@ function M.on_gui_click(event)
       state.native_blueprint_active = true
       state.native_blueprint_ghosts = {}
       show_blueprint_materials(player, info)
-      status(player, "蓝图已拿在手上；移动鼠标查看虚影，旋转后点击放置")
+      status(player, T("蓝图已拿在手上；移动鼠标查看虚影，旋转后点击放置", "Blueprint is on the cursor; move to preview, rotate if needed, then place it"))
       return
     end
     local mine_pick = string.match(name, "^" .. PREFIX .. "mine_pick_(%d+)$")
@@ -716,7 +759,7 @@ function M.on_gui_click(event)
         else
           player.clear_cursor()
           player.cursor_stack.set_stack({ name = "agentic-local-production-target-tool", count = 1 })
-          status(player, "请框选接收 " .. pending.product .. " 的生产设备或容器；以后会自动复用直到装满")
+          status(player, T("请框选接收 ", "Select a machine or chest that accepts ") .. pending.product .. T(" 的生产设备或容器；以后会自动复用直到装满", "; it will be reused until full"))
         end
       elseif state.work_mode == "full" then
         pending.harvest_count = configured_count(player, "harvest_count", 50, 200)
@@ -724,7 +767,7 @@ function M.on_gui_click(event)
         state.pending_full = pending
         player.clear_cursor()
         player.cursor_stack.set_stack({ name = "agentic-local-production-target-tool", count = 1 })
-        status(player, "已选择 " .. chosen.resource .. "；请框选使用该原料的生产设备")
+        status(player, T("已选择 ", "Selected ") .. chosen.resource .. T("；请框选使用该原料的生产设备", "; select a machine that uses this resource"))
       else
         state.pending_mining = pending
         open_mining_destination(player, chosen.resource)
@@ -748,7 +791,7 @@ function M.on_gui_click(event)
       else
         player.clear_cursor()
         player.cursor_stack.set_stack({ name = "agentic-local-mine-container-tool", count = 1 })
-        status(player, "请框选一个用于存放矿物的己方箱子；以后会自动复用直到装满")
+        status(player, T("请框选一个用于存放矿物的己方箱子；以后会自动复用直到装满", "Select a friendly chest for mined resources; it will be reused until full"))
       end
       return
     end
@@ -765,7 +808,7 @@ function M.on_gui_click(event)
       close_supply_picker(player)
       player.clear_cursor()
       player.cursor_stack.set_stack({ name = "agentic-local-production-target-tool", count = 1 })
-      status(player, "已选择 " .. item .. "；请框选熔炉、生产设备或接收容器")
+      status(player, T("已选择 ", "Selected ") .. item .. T("；请框选熔炉、生产设备或接收容器", "; select a furnace, production machine or receiving chest"))
       return
     end
     if name == PREFIX .. "work_full" then
@@ -792,16 +835,16 @@ function M.on_gui_click(event)
       close_work_mode(player)
       player.clear_cursor()
       player.cursor_stack.set_stack({ name = "agentic-local-output-source-tool", count = 1 })
-      status(player, "请框选要自动取出成品的熔炉或生产设备")
+      status(player, T("请框选要自动取出成品的熔炉或生产设备", "Select a furnace or production machine whose outputs should be collected"))
       return
     elseif name == PREFIX .. "spawn" then
       local added = add_companion(player)
       refresh_target_selector(player)
-      status(player, added .. " 已生成；当前共有 " .. #companion.names() .. " 个 AI")
+      status(player, added .. T(" 已生成；当前共有 ", " spawned; there are now ") .. #companion.names() .. T(" 个 AI", " AI companion(s)"))
     elseif name == PREFIX .. "remove" then
       local removed = remove_companion(player)
       refresh_target_selector(player)
-      status(player, removed .. " 已移除；它的物品已掉落在原地")
+      status(player, removed .. T(" 已移除；它的物品已掉落在原地", " removed; its items were dropped at its position"))
     elseif name == PREFIX .. "equip" then
       ensure_companion(player)
       local equipped = 0
@@ -811,7 +854,7 @@ function M.on_gui_click(event)
         if good then equipped = equipped + 1 end
       end
       companion.set_context(nil)
-      status(player, "已为 " .. equipped .. " 个所选助手装备武器弹药")
+      status(player, T("已为 ", "Equipped weapons and ammunition for ") .. equipped .. T(" 个所选助手装备武器弹药", " selected companion(s)"))
     elseif name == PREFIX .. "refuel" then
       local top_up = configured_count(player, "fuel_count", 10, 1000)
       order_all(player, function(c)
@@ -822,7 +865,7 @@ function M.on_gui_click(event)
           top_up_count = top_up,
         }
       end)
-      status(player, "正在补齐附近设备；可从助手背包或附近己方箱子取燃料")
+      status(player, T("正在补齐附近设备；可从助手背包或附近己方箱子取燃料", "Refueling nearby machines from companion inventories or friendly chests"))
     elseif name == PREFIX .. "repair" then
       order_all(player, function(c)
         return {
@@ -831,37 +874,37 @@ function M.on_gui_click(event)
           radius = 256,
         }
       end)
-      status(player, command_label(player) .. " 正在寻找并维修受损设备；没有修理包时会从设备附近己方箱子取")
+      status(player, command_label(player) .. T(" 正在寻找并维修受损设备；没有修理包时会从设备附近己方箱子取", " are finding and repairing damaged machines; repair packs will be collected from nearby friendly chests"))
     elseif name == PREFIX .. "follow" then
       order_all(player, function() return { type = "follow_player", player = player.name, distance = 3 } end)
-      status(player, command_label(player) .. " 正在跟随你")
+      status(player, command_label(player) .. T(" 正在跟随你", " are following you"))
     elseif name == PREFIX .. "hold" then
       order_all(player, function(c)
         return { type = "defend_area", center = { x = c.position.x, y = c.position.y }, radius = 24 }
       end)
-      status(player, command_label(player) .. " 正在原地镇守")
+      status(player, command_label(player) .. T(" 正在原地镇守", " are holding position"))
     elseif name == PREFIX .. "patrol" then
       order_all(player, function() return { type = "patrol", radius = 12 } end)
-      status(player, command_label(player) .. " 正在周边巡逻")
+      status(player, command_label(player) .. T(" 正在周边巡逻", " are patrolling nearby"))
     elseif name == PREFIX .. "attack" then
       order_all(player, function(c)
         return { type = "fight", target = { x = c.position.x, y = c.position.y }, radius = 40 }
       end)
-      status(player, command_label(player) .. " 正在清理附近敌人")
+      status(player, command_label(player) .. T(" 正在清理附近敌人", " are clearing nearby enemies"))
     elseif name == PREFIX .. "stop" then
       local selected = command_names(player)
       for _, who in ipairs(selected) do tasks.cancel({ all = true, companion = who }) end
-      status(player, "已停止 " .. command_label(player))
+      status(player, T("已停止 ", "Stopped orders for ") .. command_label(player))
     elseif name == PREFIX .. "build" then
       ensure_companion(player)
       player.clear_cursor()
       player.cursor_stack.set_stack({ name = "agentic-local-build-tool", count = 1 })
-      status(player, "请框选蓝图幽灵；材料从助手背包消耗")
+      status(player, T("请框选蓝图幽灵；材料从助手背包消耗", "Select blueprint ghosts; materials are consumed from companion inventories"))
     elseif name == PREFIX .. "demolish" then
       ensure_companion(player)
       player.clear_cursor()
       player.cursor_stack.set_stack({ name = "agentic-local-demolish-tool", count = 1 })
-      status(player, "请框选己方建筑、树木、岩石或残骸")
+      status(player, T("请框选己方建筑、树木、岩石或残骸", "Select friendly structures, trees, rocks or wreckage"))
     elseif name == PREFIX .. "mine_supply" then
       ensure_companion(player)
       open_work_mode(player)
@@ -871,7 +914,7 @@ function M.on_gui_click(event)
     end
   end)
   companion.set_context(nil)
-  if not ok then status(player, "命令失败：" .. tostring(err)) end
+  if not ok then status(player, T("命令失败：", "Command failed: ") .. tostring(err)) end
 end
 
 local function queue_selection(player, entities, mode)

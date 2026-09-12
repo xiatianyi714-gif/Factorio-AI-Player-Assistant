@@ -1,5 +1,16 @@
 # 更新日志 / Changelog
 
+## 0.9.7 — 蓝图汉化与语言切换 / Blueprint Localization and Language Switching
+
+- 汉化四套内置蓝图书、嵌套分组、全部子蓝图名称及已有说明，保留作者署名、坐标和功率参数。
+- Localized all four built-in blueprint books, nested groups, blueprint names, and existing descriptions while preserving author credits, coordinates, and power ratings.
+
+- 指令面板顶部新增语言按钮，可在中文和英文之间整体切换，默认中文并保存到存档。
+- Added a language button at the top of the command panel to switch globally between Chinese and English; Chinese is the default and the choice is saved.
+
+- 切换语言后会自动重建助手界面，并为助手换发对应语言的蓝图书；无需重新生成助手。
+- Switching language rebuilds the companion interface and reissues blueprint books in that language without respawning companions.
+
 ## 0.9.6 — 主动维修 / Autonomous Repairs
 
 - 新增“主动维修”按钮，可向全部助手或单个助手下达持续维修命令。

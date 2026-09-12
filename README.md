@@ -29,6 +29,9 @@ This enhanced edition continues development from the mod code in Agentic-Factori
 - 蓝图使用原版光标放置体验，显示完整建筑虚影、可放置状态及材料需求清单。
 - Blueprints use the native cursor placement experience with full ghost previews, placement validity, and a material requirement list.
 
+- 内置四套蓝图书及全部子蓝图均已汉化；指令面板可在中文和英文之间整体切换，切换后自动换发对应语言的蓝图。
+- All four built-in blueprint books and every nested blueprint are localized. The command panel can switch globally between Chinese and English and automatically reissues blueprints in the selected language.
+
 - 采集、生产投料和成品收纳可以全流程循环，也可以分别单独使用。
 - Mining, production feeding, and finished-product storage can run as one complete loop or as separate tasks.
 
@@ -49,11 +52,11 @@ This enhanced edition continues development from the mod code in Agentic-Factori
 
 ## 安装方法 / Installation
 
-1. 下载发布页面中的 `agentic-companion_0.9.6.zip`。
+1. 下载发布页面中的 `agentic-companion_0.9.7.zip`。
 2. 将 ZIP 放入 Factorio 的 `mods` 文件夹，不要解压。
 3. 完全退出并重新启动 Factorio，然后启用模组并载入存档。
 
-1. Download `agentic-companion_0.9.6.zip` from the Releases page.
+1. Download `agentic-companion_0.9.7.zip` from the Releases page.
 2. Place the ZIP in Factorio's `mods` folder without extracting it.
 3. Fully restart Factorio, enable the mod, and load your save.
 

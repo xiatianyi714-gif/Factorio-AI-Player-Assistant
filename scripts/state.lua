@@ -3,6 +3,7 @@ local M = {}
 -- Initializes/migrates the storage schema. Safe to call repeatedly.
 -- All fields any module needs MUST be declared here (single owner of the schema).
 function M.init()
+  storage.local_language = storage.local_language or "zh"
   storage.chat = storage.chat or { messages = {}, next_id = 1 }
 
   -- Tasks: one lane (queue + active) per companion.

@@ -15,6 +15,10 @@ local SCAN_INTERVAL_TICKS = 120
 local HEAL_PER_TICK = 3
 local HP_PER_REPAIR_PACK = 150
 
+local function T(zh, en)
+  return storage.local_language == "en" and en or zh
+end
+
 local function dist_sq(a, b)
   local dx, dy = a.x - b.x, a.y - b.y
   return dx * dx + dy * dy
@@ -105,7 +109,8 @@ function M.tick(task)
 
       if not state.warned_empty then
         state.warned_empty = true
-        local text = "发现受损设备，但助手背包和设备附近箱子中都没有修理包。"
+        local text = T("发现受损设备，但助手背包和设备附近箱子中都没有修理包。",
+          "Damaged machines were found, but there are no repair packs in the companion inventory or nearby friendly chests.")
         pcall(chat.say, { text = text })
         pcall(events.push, "supply_warning", text)
       end
@@ -169,7 +174,7 @@ function M.tick(task)
   elseif task.max_empty_scans then
     state.empty_scans = state.empty_scans + 1
     if state.empty_scans >= task.max_empty_scans then
-      return { status = "done", detail = "当前没有需要维修的己方设备" }
+      return { status = "done", detail = T("当前没有需要维修的己方设备", "No friendly machines currently need repairs") }
     end
   end
   return nil
