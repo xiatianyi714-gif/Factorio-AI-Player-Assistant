@@ -4,6 +4,7 @@ local companion = require("scripts.companion")
 local approach = require("scripts.actions.approach")
 local material_supply = require("scripts.actions.material_supply")
 local reservations = require("scripts.reservations")
+local machine_supply = require("scripts.machine_supply")
 
 local M = {}
 
@@ -64,6 +65,9 @@ function M.tick(task)
   local target = task.target_entity
   if not (target and target.valid) then target = approach.find_entity_near(c, task.target, 1.0) end
   if not target then return { status = "failed", detail = "指定的生产设备或容器已不存在" } end
+  if machine_supply.supported(target) and not machine_supply.accepts_input(target, task.item) then
+    return { status = "failed", detail = task.item .. " 不是该设备当前配方的原材料，已取消错误投料" }
+  end
   if task.reservation_key and not reservations.claim_key(task.reservation_key, companion.context(), task.id) then
     return { status = "done", detail = "另一名助手已接手该生产设备" }
   end

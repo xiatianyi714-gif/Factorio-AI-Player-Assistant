@@ -206,7 +206,8 @@ local function refresh_machine_panels(player)
       for _, rule in ipairs(configured) do
         local row = list.add({ type = "flow", direction = "horizontal" })
         row.add({ type = "label", caption = { "", prototypes.item[rule.item].localised_name,
-          T("：目标 ", ": target "), rule.target } })
+          T("：目标 ", ": target "), rule.target,
+          rule.compatible and "" or T("（当前配方不兼容，已停用）", " (incompatible with current recipe; paused)") } })
         row.add({ type = "button", name = PREFIX .. "machine_remove", caption = T("删除", "Remove"),
           tags = { item = rule.item } })
       end

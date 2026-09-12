@@ -1,5 +1,25 @@
 # 更新日志 / Changelog
 
+## 0.19.1
+
+### 中文
+
+- 修复生产投料使用设备通用插入接口，可能把燃料、模块或其他无关物品误判为配方原料的问题。
+- 组装机与火箭发射井现在只允许当前配方所需的物品原料；尚未选择配方时不会执行投料。
+- 空熔炉根据自身支持的冶炼类别识别有效矿物，已有配方时严格跟随当前配方。
+- 研究所只接收该研究所原型支持的科技包。
+- 更换配方后，不兼容的旧清单项目会自动停止并在设备面板标记为“当前配方不兼容”，不会擅自删除玩家配置。
+- 助手到达设备后会再次验证配方，防止搬运途中更换配方造成错误投入；燃料继续只由补燃料系统处理。
+
+### English
+
+- Fixed production supply relying on generic entity insertion, which could mistake fuel, modules or unrelated items for recipe ingredients.
+- Assemblers and rocket silos now accept only item ingredients of their current recipe and remain inactive until a recipe is selected.
+- Empty furnaces recognize valid ingredients by supported smelting category and follow the exact active recipe once established.
+- Labs accept only science packs supported by that lab prototype.
+- After a recipe change, incompatible saved rules pause and are visibly marked instead of being silently deleted.
+- Companions validate again on arrival to prevent mid-trip recipe changes from causing incorrect insertion; fuel remains exclusive to refueling.
+
 ## 0.19.0
 
 ### 中文

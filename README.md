@@ -1,6 +1,6 @@
 # 异星工厂 AI 玩家助手 / Factorio AI Player Assistant
 
-> 当前版本 / Current version: 0.19.0 — 新增按物品配送和每台生产设备独立的自动投料清单。
+> 当前版本 / Current version: 0.19.1 — 生产投料严格匹配当前配方，不再把燃料、模块或无关物品误当原料。
 
 一个完全在 Factorio 2.0 游戏内运行的多助手模组，不需要外部 AI、API、Codex 或 Token。助手像真实角色一样移动、采矿、搬运、建造和战斗，所有物品都来自实际背包、箱子或采集行为。
 
@@ -93,6 +93,9 @@ This enhanced edition continues development from the mod code in Agentic-Factori
 
 - 打开熔炉、组装机、研究所或火箭发射井时，原版设备窗口右侧会显示该设备专属的“助手自动投料清单”；可登记多种物品及各自目标数量。规则随存档保存，待机助手按自己的生产投料优先级持续补充真实物资。
 - Opening a furnace, assembling machine, lab or rocket silo shows that machine's own Companion Input List beside the native GUI. Multiple item targets can be saved per machine; idle helpers service them through their production priority using only real supplies.
+
+- 投料清单严格校验设备当前配方：组装机和发射井只接受当前配方原料，熔炉只接受其冶炼类别原料，研究所只接受支持的科技包。燃料和模块不会混入生产投料；更换配方后不兼容的旧规则会显示为停用。
+- Input lists are recipe-strict: assemblers and silos accept only current recipe ingredients, furnaces accept only valid smelting inputs, and labs accept supported science packs. Fuel and modules cannot leak into production input; stale rules pause visibly after a recipe change.
 
 - 自动检查燃料目标数量，依次给多个设备补充；优先使用助手背包或己方箱子中的煤炭，没有可用煤炭时才使用其他兼容燃料，全部缺少时会寻找煤矿并实际开采。
 - 从箱子取燃料时会汇总个人搜索范围内的兼容设备需求，一次尽量带够整批燃料后连续补充，避免每补一台就返回箱子。
