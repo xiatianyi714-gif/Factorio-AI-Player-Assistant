@@ -15,6 +15,7 @@ local blueprint = require("scripts.blueprint")
 local screenshot = require("scripts.screenshot")
 local local_gui = require("scripts.local_gui")
 local idle = require("scripts.idle")
+local combat_coordinator = require("scripts.combat_coordinator")
 
 rpc.register("ping", function()
   return {
@@ -103,6 +104,7 @@ script.on_event(defines.events.on_tick, function()
     end
   end
   companion.set_context(nil)
+  combat_coordinator.on_tick()
   tasks.on_tick()
   local_gui.on_tick()
 end)

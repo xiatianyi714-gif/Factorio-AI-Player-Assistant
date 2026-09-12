@@ -1,5 +1,21 @@
 # 更新日志 / Changelog
 
+## 0.14.0
+
+### 中文
+
+- 新增巡逻小队战斗协同：任意巡逻助手在30格内发现敌人或虫巢时，会呼叫96格内其他正在巡逻的助手共同支援。
+- 支援者使用原有战术评估，根据武器、弹药、血量、敌我数量决定接战或撤退，不会获得作弊弹药或伤害。
+- 小队会清理发现点周围40格的敌人；战斗或撤退结束后，每名助手恢复各自被中断的巡逻任务和路线点。
+- 非巡逻工作的助手不会被强行征召，避免生产、采矿和维护任务被远处战斗频繁打断。
+
+### English
+
+- Added patrol squad coordination: when any patrol helper detects an enemy or nest within 30 tiles, nearby patrol helpers within 96 tiles are called to assist.
+- Responders retain normal tactical evaluation based on weapons, ammunition, health and local force balance; no ammunition or damage is created.
+- The squad clears a 40-tile area around the sighting. After fighting or retreating, every helper resumes its own suspended patrol route and waypoint.
+- Non-patrol workers are not forcibly recruited, preventing distant combat from repeatedly interrupting production, mining and maintenance.
+
 ## 0.13.1
 
 ### 中文
