@@ -21,6 +21,7 @@ local PALETTE = {
 
 local LABEL_OFFSET = { 0, -2.9 }
 local MAP_TAG_MOVE_SQ = 9
+local RESPAWN_DELAY_TICKS = 10 * 60
 
 -- Transient (NOT storage-safe, deliberately): valid only within one call/tick.
 local current_name = nil
@@ -81,6 +82,37 @@ end
 
 function M.record(name)
   return records()[name or M.context()]
+end
+
+-- Remember a dead helper without copying its possessions. Factorio handles
+-- the death/corpse inventories; the replacement body therefore starts empty.
+function M.schedule_respawn(entity)
+  if not entity then return nil end
+  for name, rec in pairs(records()) do
+    if rec.entity == entity or (rec.unit_number and rec.unit_number == entity.unit_number) then
+      rec.death_position = { x = entity.position.x, y = entity.position.y }
+      rec.death_surface_index = entity.surface.index
+      rec.respawn_tick = game.tick + RESPAWN_DELAY_TICKS
+      rec.entity = nil
+      pcall(function() if rec.label and rec.label.valid then rec.label.destroy() end end)
+      pcall(function() if rec.map_tag and rec.map_tag.valid then rec.map_tag.destroy() end end)
+      rec.label, rec.map_tag = nil, nil
+      return name
+    end
+  end
+  return nil
+end
+
+function M.process_respawns()
+  for name, rec in pairs(records()) do
+    if rec.respawn_tick and game.tick >= rec.respawn_tick and not M.get(name) then
+      local player = game.connected_players[1]
+      local params = { name = name }
+      if player then params.near_player = player.name end
+      local ok = pcall(M.spawn, params)
+      if not ok then rec.respawn_tick = game.tick + 60 end
+    end
+  end
 end
 
 local function spill_inventory(ent, inventory_id)
@@ -271,6 +303,9 @@ function M.spawn(params)
   records()[name] = rec
   rec.entity = ent
   rec.unit_number = ent.unit_number
+  rec.respawn_tick = nil
+  rec.death_position = nil
+  rec.death_surface_index = nil
   ent.color = color_for(name)
   apply_speed_to(ent)
   if name == M.DEFAULT then

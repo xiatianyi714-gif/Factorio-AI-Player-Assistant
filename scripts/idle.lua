@@ -8,6 +8,85 @@ local repair = require("scripts.actions.repair")
 
 local M = {}
 local ENEMY_TYPES = { "unit", "unit-spawner", "turret" }
+local AUTO_SMELT_RADIUS = 256
+local AUTO_SMELT_BATCH = 50
+local smelting_categories_by_item
+
+local function smelting_items()
+  if smelting_categories_by_item then return smelting_categories_by_item end
+  smelting_categories_by_item = {}
+  for _, recipe in pairs(prototypes.recipe) do
+    local category = recipe.category or "crafting"
+    for _, ingredient in ipairs(recipe.ingredients or {}) do
+      if ingredient.type == "item" then
+        local categories = smelting_categories_by_item[ingredient.name] or {}
+        categories[category] = true
+        smelting_categories_by_item[ingredient.name] = categories
+      end
+    end
+  end
+  return smelting_categories_by_item
+end
+
+local function autonomous_smelting_task(c)
+  local available = {}
+  for _, stack in ipairs(c.get_main_inventory().get_contents()) do
+    available[stack.name] = (available[stack.name] or 0) + stack.count
+  end
+  for _, box in ipairs(c.surface.find_entities_filtered({
+    position = c.position,
+    radius = AUTO_SMELT_RADIUS,
+    force = c.force,
+    type = { "container", "logistic-container" },
+  })) do
+    local inv = box.get_inventory(defines.inventory.chest)
+    if inv then
+      for _, stack in ipairs(inv.get_contents()) do
+        available[stack.name] = (available[stack.name] or 0) + stack.count
+      end
+    end
+  end
+  if not next(available) then return nil end
+  local candidates = smelting_items()
+  local furnaces = c.surface.find_entities_filtered({
+    position = c.position,
+    radius = AUTO_SMELT_RADIUS,
+    force = c.force,
+    type = "furnace",
+  })
+  local best, best_item, best_count, best_distance
+  for item_name, item_count in pairs(available) do
+    local categories = candidates[item_name]
+    if categories then
+      for _, furnace in ipairs(furnaces) do
+        local supported = false
+        for category in pairs(furnace.prototype.crafting_categories or {}) do
+          if categories[category] then supported = true; break end
+        end
+        local accepts = false
+        if supported then
+          pcall(function() accepts = furnace.can_insert({ name = item_name, count = 1 }) end)
+        end
+        if accepts then
+          local dx, dy = furnace.position.x - c.position.x, furnace.position.y - c.position.y
+          local distance = dx * dx + dy * dy
+          if not best_distance or distance < best_distance then
+            best, best_item, best_count, best_distance = furnace, item_name, item_count, distance
+          end
+        end
+      end
+    end
+  end
+  if not best then return nil end
+  return {
+    type = "supply_input",
+    item = best_item,
+    count = math.min(best_count, AUTO_SMELT_BATCH),
+    target = { x = best.position.x, y = best.position.y },
+    autonomous_smelt = true,
+    find_in_chests = true,
+  }
+end
 
 local function random_minable(c)
   local list = {}
@@ -45,7 +124,7 @@ local function wander_task(c)
 end
 
 function M.update()
-  local assigned = { repair = 0, refuel = 0, mine = 0, patrol = 0 }
+  local assigned = { repair = 0, refuel = 0, smelt = 0, mine = 0, patrol = 0 }
   -- Include autonomous work that is already running when enforcing the
   -- two-helper limit.
   for _, name in ipairs(companion.names()) do
@@ -53,6 +132,7 @@ function M.update()
     if active then
       if active.type == "keep_repaired" then assigned.repair = assigned.repair + 1
       elseif active.type == "keep_fueled" then assigned.refuel = assigned.refuel + 1
+      elseif active.type == "supply_input" then assigned.smelt = assigned.smelt + 1
       elseif active.type == "mine" then assigned.mine = assigned.mine + 1
       elseif active.type == "patrol" then assigned.patrol = assigned.patrol + 1 end
     end
@@ -77,10 +157,14 @@ function M.update()
             max_empty_scans = 1,
           }
           assigned.refuel = assigned.refuel + 1
-        elseif assigned.patrol < 2 then
+        elseif assigned.smelt < 2 then
+          task = autonomous_smelting_task(c)
+          if task then assigned.smelt = assigned.smelt + 1 end
+        end
+        if not task and assigned.patrol < 2 then
           task = { type = "patrol", radius = 12, rounds = 1 }
           assigned.patrol = assigned.patrol + 1
-        elseif assigned.mine < 2 then
+        elseif not task and assigned.mine < 2 then
           local target = random_minable(c)
           if target then
             if target.type == "resource" then

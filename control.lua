@@ -86,6 +86,7 @@ script.on_nth_tick(120, function()
 end)
 script.on_nth_tick(300, idle.update)
 script.on_event(defines.events.on_tick, function()
+  companion.process_respawns()
   tasks.on_tick()
   local_gui.on_tick()
 end)
@@ -119,6 +120,9 @@ script.on_event(defines.events.on_entity_damaged, function(event)
     end
   end
 end, { { filter = "type", type = "character" } })
-script.on_event(defines.events.on_entity_died, events.on_entity_died,
-  { { filter = "type", type = "character" } })
+script.on_event(defines.events.on_entity_died, function(event)
+  events.on_entity_died(event)
+  local name = companion.schedule_respawn(event.entity)
+  if name then tasks.cancel({ all = true, companion = name }) end
+end, { { filter = "type", type = "character" } })
 script.on_event(defines.events.on_research_finished, events.on_research_finished)

@@ -1,5 +1,22 @@
 # 更新日志 / Changelog
 
+## 0.9.11 — 待机自动熔炼与助手复活 / Autonomous Smelting and Companion Respawn
+
+- 待机助手背包里有可熔炼矿物时，会主动寻找 256 格内能够接收该矿物的己方熔炉，亲自走到旁边投入，每次最多投入 50 个。
+- When an idle companion carries smeltable ore, it finds a compatible friendly furnace within 256 tiles, walks to it, and inserts up to 50 items per trip.
+
+- 助手背包没有矿石时，也会主动寻找己方箱子里的可熔炼矿物，走到箱子旁取料后再送往兼容熔炉。
+- When its inventory has no ore, the companion also searches friendly chests, physically retrieves smeltable materials, and delivers them to a compatible furnace.
+
+- 自动识别熔炉支持的配方分类与实际可接受物品，避免把无对应熔炼配方的背包物品误当作原料；该任务不会创造任何物品。
+- Furnace crafting categories and accepted items are checked to avoid treating unrelated inventory contents as ingredients; this task never creates items.
+
+- 待机顺序调整为战斗、维修、补燃料、矿物投料、巡逻、挖矿，玩家明确下达的命令仍然优先。
+- The idle order is now combat, repair, refueling, ore feeding, patrol, and mining; explicit player commands still take priority.
+
+- 助手死亡后会像玩家一样等待 10 秒，然后在当前玩家附近以原名称复活；死亡时的任务会取消，原背包物品仍按死亡机制留在死亡地点，不会在复活时复制。
+- After death, a companion waits 10 seconds and respawns near the current player with the same name. Its task is cancelled, and death inventory remains at the death location instead of being duplicated on respawn.
+
 ## 0.9.10 — 主动搜索敌人 / Active Enemy Hunting
 
 - “清理敌人”命令改为以玩家下令位置为中心搜索 256 格范围，不再只检查助手脚下 40 格。

@@ -2,6 +2,7 @@
 -- production entity. The target's own insert rules decide compatibility.
 local companion = require("scripts.companion")
 local approach = require("scripts.actions.approach")
+local material_supply = require("scripts.actions.material_supply")
 
 local M = {}
 
@@ -39,7 +40,7 @@ function M.start(task)
   task.count = math.max(1, math.floor(tonumber(task.count) or 1))
   local missing = task.count - c.get_item_count(task.item)
   if missing > 0 then take_from_chests(c, task.item, missing) end
-  if c.get_item_count(task.item) == 0 then
+  if c.get_item_count(task.item) == 0 and not task.find_in_chests then
     error("助手背包和伸手可及的箱子里都没有 " .. task.item)
   end
 end
@@ -47,6 +48,13 @@ end
 function M.tick(task)
   local c = companion.get()
   if not c then return { status = "failed", detail = "the companion character is gone" } end
+  if c.get_item_count(task.item) == 0 and task.find_in_chests then
+    local supplied = material_supply.ensure(task, c, task.item, task.count, task.target)
+    if supplied == nil then return nil end
+    if supplied == "missing" then
+      return { status = "failed", detail = "附近己方箱子里没有可用的 " .. task.item }
+    end
+  end
   local reached = approach.ensure(task, c, task.target, c.reach_distance)
   if type(reached) == "table" then return reached end
   if reached ~= "ok" then return nil end

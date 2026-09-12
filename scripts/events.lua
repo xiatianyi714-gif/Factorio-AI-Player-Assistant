@@ -80,8 +80,8 @@ function M.on_entity_died(event)
   local name = companion_name_of(entity)
   if not name then return end
   M.push("died", string.format(
-    '%s died at (%.1f, %.1f)! Their items dropped there. Respawn with {"name":"%s"}, then decide whether to recover them.',
-    name, entity.position.x, entity.position.y, name), { companion = name })
+    '%s died at (%.1f, %.1f)! Their items dropped there. They will respawn near the player in 10 seconds.',
+    name, entity.position.x, entity.position.y), { companion = name })
 end
 
 function M.on_research_finished(event)
