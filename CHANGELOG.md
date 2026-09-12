@@ -1,5 +1,23 @@
 # 更新日志 / Changelog
 
+## 0.18.0
+
+### 中文
+
+- 正在执行“跟随我”的助手会检测玩家所乘载具，并在乘客位空闲且进入正常交互距离后自动上车。
+- 助手只使用乘客位，绝不抢占玩家驾驶位；座位已满或载具不支持乘客时，其余助手继续在地面跟随。
+- 玩家下车或更换载具时，乘车助手会同步下车并继续原来的跟随任务。
+- 乘车期间助手持续检查射程内敌人，使用自身实际装备的武器和弹药主动射击。
+- 跟随命令被其他工作替换或停止时，助手会先离开乘客位，避免后续步行任务卡住。
+
+### English
+
+- A companion running Follow Me detects the player's vehicle and automatically boards when its passenger seat is free and within normal interaction distance.
+- Helpers use only passenger seats and never steal the driver's position. Extra helpers stay on foot if the seat is occupied or unsupported.
+- When the player exits or changes vehicles, the passenger exits and resumes the same follow task on foot.
+- While travelling, the companion continuously checks for enemies in weapon range and fires using its real equipped weapon and ammunition.
+- Replacing or stopping Follow Me makes the helper leave the passenger seat first, preventing subsequent walking jobs from getting stuck.
+
 ## 0.17.0
 
 ### 中文

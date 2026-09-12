@@ -42,6 +42,29 @@ local function shoot_nearby_enemy(c)
   return true
 end
 
+local function passenger_is(vehicle, occupant)
+  local passenger
+  pcall(function() passenger = vehicle.get_passenger() end)
+  return passenger == occupant
+end
+
+local function try_board_player_vehicle(c, p, f)
+  local vehicle = p.vehicle
+  if not (vehicle and vehicle.valid) then return false end
+  local passenger
+  local supported = pcall(function() passenger = vehicle.get_passenger() end)
+  if not supported or (passenger and passenger ~= c) then return false end
+  if passenger == c then return true end
+  if dist_sq(c.position, vehicle.position) > (c.reach_distance + 1) ^ 2 then return false end
+  local boarded = pcall(function() vehicle.set_passenger(c) end)
+  if boarded and c.vehicle == vehicle then
+    f.walk, f.walk_target, f.retry_at = nil, nil, nil
+    c.walking_state = { walking = false }
+    return true
+  end
+  return false
+end
+
 function M.start(task)
   companion.require_companion()
   if task.player ~= nil and type(task.player) ~= "string" then
@@ -74,6 +97,28 @@ function M.tick(task)
   end
 
   local f = task._follow
+
+  -- A follower uses only the passenger seat and never takes control from the
+  -- player. When the player exits or changes vehicles, leave immediately and
+  -- resume the same persistent follow task on foot.
+  if c.vehicle then
+    if p.vehicle == c.vehicle and passenger_is(c.vehicle, c) then
+      if not shoot_nearby_enemy(c) then
+        pcall(function() c.shooting_state = { state = defines.shooting.not_shooting } end)
+      end
+      return nil
+    end
+    pcall(function() c.driving = false end)
+    f.walk, f.walk_target, f.retry_at = nil, nil, nil
+  end
+
+  if p.vehicle and try_board_player_vehicle(c, p, f) then
+    if not shoot_nearby_enemy(c) then
+      pcall(function() c.shooting_state = { state = defines.shooting.not_shooting } end)
+    end
+    return nil
+  end
+
   if not shoot_nearby_enemy(c) then
     pcall(function() c.shooting_state = { state = defines.shooting.not_shooting } end)
   end
@@ -109,6 +154,15 @@ function M.tick(task)
     f.retry_at = game.tick + RETRY_DELAY_TICKS
   end
   return nil
+end
+
+-- Called when follow is replaced/cancelled so a seated helper cannot remain
+-- trapped in the old vehicle while its next task tries to walk elsewhere.
+function M.stop()
+  local c = companion.get()
+  if c and c.vehicle and passenger_is(c.vehicle, c) then
+    pcall(function() c.driving = false end)
+  end
 end
 
 return M

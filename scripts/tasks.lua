@@ -108,6 +108,8 @@ local function finish(task, status, detail)
   if l.active and l.active.id == task.id then
     l.active = nil
   end
+  local runner = runners[task.type]
+  if runner and runner.stop then pcall(runner.stop, task) end
   stop_body()
 
   -- Reactive combat temporarily suspends work instead of destroying it.
