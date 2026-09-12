@@ -67,6 +67,10 @@ remote.add_interface("agentic", {
 
 local function initialize()
   state.init()
+  if storage.stop_old_autonomous_tasks then
+    tasks.cancel_autonomous()
+    storage.stop_old_autonomous_tasks = nil
+  end
   companion.apply_movement_speed()
   local_gui.initialize()
 end

@@ -14,7 +14,7 @@ local AUTO_SMELT_RADIUS = 256
 local AUTO_SMELT_BATCH = 50
 local smelting_categories_by_item
 local WORK_ORDER = { "repair", "refuel", "turret", "smelt", "patrol", "mine" }
-local DEFAULT_PRIORITY = { repair = 1, refuel = 2, turret = 3, smelt = 4, patrol = 4, mine = 4 }
+local DEFAULT_PRIORITY = { repair = 1, refuel = 2, turret = 3, smelt = 4, patrol = 0, mine = 4 }
 
 local function work_radius(name)
   local saved = storage.work_settings and storage.work_settings[name]
@@ -229,7 +229,9 @@ function M.update()
             end
           end
         end
-        task = task or wander_task(c, center, radius)
+        -- No unconditional wandering fallback. If no enabled work exists, the
+        -- helper stays where it is; patrol movement must be explicitly enabled
+        -- through priorities, a guard role, or a direct patrol order.
         if task then
           task.autonomous = true
           tasks.enqueue({ task = task, replace = false, background = true, quiet = true })

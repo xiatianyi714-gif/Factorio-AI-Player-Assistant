@@ -1,5 +1,21 @@
 # 更新日志 / Changelog
 
+## 0.15.2
+
+### 中文
+
+- 移除“没有任何可执行工作时随机走动”的强制兜底，助手真正无事可做时会原地待机。
+- 普通默认设置和新版全能助手模板默认关闭待机巡逻，避免所有助手长期绕圈乱跑。
+- 手动巡逻、保存路线和守卫职业巡逻保持不变；也可以在个人工作优先级中重新开启巡逻。
+- 维修、补燃料、炮塔补弹、装备、生产和采矿仍会在发现真实工作后正常移动。
+
+### English
+
+- Removed the unconditional random-walk fallback; helpers now remain still when no enabled work is available.
+- Idle patrol is disabled by default for ordinary helpers and the updated Generalist role, preventing constant aimless movement.
+- Manual patrols, saved routes and Guard patrol behavior remain unchanged, and patrol can still be enabled in personal work priorities.
+- Repairs, refueling, turret supply, equipment, production and mining still move normally when real work is found.
+
 ## 0.15.1
 
 ### 中文

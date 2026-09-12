@@ -44,6 +44,20 @@ function M.init()
   storage.events = storage.events or { list = {}, next_id = 1 }
   storage.output_routes = storage.output_routes or {}
   storage.output_route_locks = storage.output_route_locks or {}
+
+  -- One-time 0.15.2 migration: an unchanged old Generalist preset enabled
+  -- patrol at priority 4. Disable only that exact preset so deliberate custom
+  -- patrol settings remain untouched, and stop its already-running idle job.
+  if not storage.migrated_quiet_idle_0152 then
+    for _, p in pairs(storage.work_priorities) do
+      if p.repair == 1 and p.refuel == 2 and p.turret == 3 and p.smelt == 4
+          and p.patrol == 4 and p.mine == 4 then
+        p.patrol = 0
+      end
+    end
+    storage.migrated_quiet_idle_0152 = true
+    storage.stop_old_autonomous_tasks = true
+  end
 end
 
 return M

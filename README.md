@@ -1,6 +1,6 @@
 # 异星工厂 AI 玩家助手 / Factorio AI Player Assistant
 
-> 当前版本 / Current version: 0.15.1 — 助手会在安全待机时主动从工作区箱子取得并装备配套枪弹。
+> 当前版本 / Current version: 0.15.2 — 移除无任务时的强制随机走动，普通助手默认安静待机。
 
 一个完全在 Factorio 2.0 游戏内运行的多助手模组，不需要外部 AI、API、Codex 或 Token。助手像真实角色一样移动、采矿、搬运、建造和战斗，所有物品都来自实际背包、箱子或采集行为。
 
