@@ -1,5 +1,10 @@
 # 更新日志 / Changelog
 
+## 0.9.9 — 待机挖矿优先级调整 / Idle Mining Priority Adjustment
+
+- 将助手待机时的自动挖矿降为最低优先级；现在依次优先处理战斗、主动维修、补齐燃料和巡逻，只有前述工作都未分配时才会挖矿。
+- Automatic mining is now the lowest-priority idle activity. Companions prioritize combat, autonomous repairs, refueling, and patrol, and mine only when none of those jobs are assigned.
+
 ## 0.9.8 — 蓝图自主取料施工 / Autonomous Blueprint Material Retrieval
 
 - 助手施工原版蓝图虚影时，会统计尚未建造的同类建筑数量，并在施工区域 256 格内寻找存有对应材料的己方箱子。

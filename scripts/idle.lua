@@ -77,6 +77,9 @@ function M.update()
             max_empty_scans = 1,
           }
           assigned.refuel = assigned.refuel + 1
+        elseif assigned.patrol < 2 then
+          task = { type = "patrol", radius = 12, rounds = 1 }
+          assigned.patrol = assigned.patrol + 1
         elseif assigned.mine < 2 then
           local target = random_minable(c)
           if target then
@@ -88,10 +91,8 @@ function M.update()
             assigned.mine = assigned.mine + 1
           end
         end
-        if not task and assigned.patrol < 2 then
-          task = { type = "patrol", radius = 12, rounds = 1 }
-          assigned.patrol = assigned.patrol + 1
-        end
+        -- Mining is deliberately the lowest-priority useful idle job. It is
+        -- considered only after combat, repairs, refueling, and patrol.
         task = task or wander_task(c)
         if task then
           tasks.enqueue({ task = task, replace = false, background = true, quiet = true })
