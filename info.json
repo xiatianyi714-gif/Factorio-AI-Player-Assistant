@@ -1,0 +1,11 @@
+{
+  "name": "agentic-companion",
+  "version": "0.9.5",
+  "title": "Agentic Companion - Local Commander",
+  "author": "xell",
+  "factorio_version": "2.0",
+  "dependencies": [
+    "base >= 2.0"
+  ],
+  "description": "A fully local combat and construction companion with its own inventory, fair resource use, refueling, and an in-game command panel."
+}

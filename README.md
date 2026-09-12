@@ -1,0 +1,95 @@
+# 本地智能助手 / Local Intelligent Companion
+
+一个完全在 Factorio 2.0 游戏内运行的多助手模组，不需要外部 AI、API、Codex 或 Token。助手像真实角色一样移动、采矿、搬运、建造和战斗，所有物品都来自实际背包、箱子或采集行为。
+
+A multi-companion mod that runs entirely inside Factorio 2.0. It requires no external AI, API, Codex, or tokens. Companions physically move, mine, transport, build, and fight, and every item must come from a real inventory, chest, or mining action.
+
+> **原作者与原项目：Matteo Mekhail — [Agentic-Factorio](https://github.com/matteomekhail/Agentic-Factorio)**
+>
+> **Original author and project: Matteo Mekhail — [Agentic-Factorio](https://github.com/matteomekhail/Agentic-Factorio)**
+
+本优化版基于 Matteo Mekhail 创建的 Agentic-Factorio 项目中的模组代码继续开发。感谢原作者公开项目和最初设计；本仓库中的本地指令系统及后续功能是在该基础上的重构与扩展，并不声称原始项目为本优化版作者原创。
+
+This enhanced edition continues development from the mod code in Agentic-Factorio, created by Matteo Mekhail. Credit belongs to the original author for publishing the project and its initial design. The local command system and later features in this repository are refactors and extensions of that work, and the original project is not claimed as the work of this edition's maintainer.
+
+## 主要特点 / Main Features
+
+- 最多生成四名助手，可向全部助手或单个助手下达命令。
+- Spawn up to four companions and command all of them or an individual companion.
+
+- 跟随、原地镇守、巡逻、主动清理敌人和停止命令。
+- Follow, hold position, patrol, clear nearby enemies, and stop commands.
+
+- 助手拥有独立背包，拿取距离、移动速度、采矿时间和拆除时间遵循原版角色规则。
+- Each companion has an independent inventory. Reach distance, movement speed, mining time, and deconstruction time follow vanilla character rules.
+
+- 框选建筑幽灵后由助手亲自建造；框选建筑、树木、岩石或残骸后由助手亲自拆除。
+- Companions physically construct selected ghosts and physically deconstruct selected buildings, trees, rocks, or wreckage.
+
+- 蓝图使用原版光标放置体验，显示完整建筑虚影、可放置状态及材料需求清单。
+- Blueprints use the native cursor placement experience with full ghost previews, placement validity, and a material requirement list.
+
+- 采集、生产投料和成品收纳可以全流程循环，也可以分别单独使用。
+- Mining, production feeding, and finished-product storage can run as one complete loop or as separate tasks.
+
+- 不同成品可映射到不同箱子，助手会记住“成品 → 箱子”的分类规则。
+- Different products can be mapped to different chests, and companions remember each product-to-chest sorting rule.
+
+- 自动检查燃料目标数量，依次给多个设备补充；背包和箱子没有燃料时会寻找煤矿并实际开采。
+- Automatically checks target fuel levels and services multiple machines; when neither inventories nor chests contain fuel, the companion finds and physically mines coal.
+
+- 受到攻击时根据血量、武器弹药、敌人数和附近友方力量决定反击或撤退，战斗结束后恢复原任务。
+- When attacked, companions decide whether to fight or retreat based on health, weapons, ammunition, enemy count, and nearby allied strength, then resume the previous task.
+
+- 空闲时按照补燃料、采矿、巡逻的优先级自主工作，同一种空闲工作最多两名助手执行。
+- While idle, companions autonomously prioritize refueling, mining, then patrol; no more than two companions perform the same idle activity.
+
+## 安装方法 / Installation
+
+1. 下载发布页面中的 `agentic-companion_0.9.5.zip`。
+2. 将 ZIP 放入 Factorio 的 `mods` 文件夹，不要解压。
+3. 完全退出并重新启动 Factorio，然后启用模组并载入存档。
+
+1. Download `agentic-companion_0.9.5.zip` from the Releases page.
+2. Place the ZIP in Factorio's `mods` folder without extracting it.
+3. Fully restart Factorio, enable the mod, and load your save.
+
+Windows 默认模组目录：`%APPDATA%\Factorio\mods`
+
+Default Windows mod directory: `%APPDATA%\Factorio\mods`
+
+## 使用方法 / Usage
+
+点击顶部的“助手命令”打开控制面板，选择全部助手或指定助手，然后使用对应按钮下令。成功命令会以玩家说话口吻显示在头顶并写入聊天栏；失败信息只显示在左侧状态栏。
+
+Click “Companion Commands” at the top to open the control panel. Select all companions or one companion, then choose a command. Successful commands appear above the player in a spoken-command style and in chat; failures only appear in the left status panel.
+
+“采集·生产·收纳”提供全流程、采集并投料、只采集、只生产投料和只收纳五种模式。全流程依次执行采集原料、投入设备、等待生产、取出成品和分类入箱。
+
+“Mine · Produce · Store” provides five modes: full workflow, mine and feed, mining only, production feeding only, and output storage only. The full workflow mines raw materials, feeds a machine, waits for production, collects products, and sorts them into mapped chests.
+
+## 公平性与兼容性 / Fairness and Compatibility
+
+模组不会凭空生成建筑、燃料、弹药或生产材料。助手必须从自己的背包、己方箱子或真实采集行为取得物品。支持 Factorio 2.0，已使用 Factorio 2.0.77 验证加载。
+
+The mod never creates buildings, fuel, ammunition, or production materials from nothing. Companions must obtain items from their own inventories, friendly chests, or real mining actions. It supports Factorio 2.0 and has been load-tested with Factorio 2.0.77.
+
+## 存档兼容 / Save Compatibility
+
+旧版本存档可以升级到新版本。建议更新前备份存档，并在首次成功载入新版后另存一个新存档。正在执行的旧任务在内部结构变化时可能重新开始，但地图、助手和背包物品会保留。
+
+Saves from earlier versions can be upgraded. Back up the save before updating and create a new save after the first successful load. Active tasks may restart when internal task structures change, but the map, companions, and inventory items are preserved.
+
+## 更新日志 / Changelog
+
+完整版本记录请查看 [CHANGELOG.md](CHANGELOG.md)。
+
+See [CHANGELOG.md](CHANGELOG.md) for the complete version history.
+
+## 来源与致谢 / Origin and Credits
+
+原作者为 Matteo Mekhail。本项目基于其 Agentic-Factorio 的模组部分进行本地化重构和扩展，目标是提供无需外部模型、无需 Token 的游戏内助手体验。原项目 README 声明使用 MIT License；请同时参阅本仓库的 [NOTICE.md](NOTICE.md)。
+
+The original author is Matteo Mekhail. This project is a localized refactor and extension of the mod portion of Agentic-Factorio, focused on an in-game companion experience that requires no external model or tokens. The original project's README declares the MIT License; also see this repository's [NOTICE.md](NOTICE.md).
+
+原项目 / Original project: https://github.com/matteomekhail/Agentic-Factorio
