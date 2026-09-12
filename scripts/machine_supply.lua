@@ -251,7 +251,15 @@ local function find_output_task(c, radius, center)
         local inv
         pcall(function() inv = source.get_output_inventory() end)
         local full = output_blocked(source, inv)
-        if full and inv.get_item_count(route.item) > 0 and (not best_d or d < best_d) then
+        local destination_accepts = false
+        pcall(function()
+          destination_accepts = destination.can_insert({ name = route.item, count = 1 })
+        end)
+        -- A legacy per-machine route must not mask newer classification
+        -- chests when its destination is full. Skip it and continue into the
+        -- global chest search below, which can choose another matching box.
+        if full and inv and inv.get_item_count(route.item) > 0 and destination_accepts
+            and (not best_d or d < best_d) then
           best_key, best_d = route_key, d
         end
       end

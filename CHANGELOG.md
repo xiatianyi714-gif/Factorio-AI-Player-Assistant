@@ -1,5 +1,19 @@
 # 更新日志 / Changelog
 
+## 0.19.9
+
+### 中文
+
+- 修复旧的设备指定收纳路线指向满箱后，会一直阻挡新的分类收纳箱被选择的问题。
+- 助手现在会在领取搬运任务前检查目标箱是否还能接收该物品；满箱会被跳过，并自动改用其他登记了相同物品且有空间的箱子。
+- 保留原有路线和清单，无需在旧存档中重新设置。
+
+### English
+
+- Fixed a full legacy per-machine output destination repeatedly masking newer classified storage chests.
+- Helpers now verify destination capacity before accepting a route, skip full chests, and automatically choose another non-full chest registered for the same item.
+- Existing routes and lists remain compatible and do not need to be configured again.
+
 ## 0.19.8
 
 ### 中文
