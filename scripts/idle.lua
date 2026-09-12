@@ -12,6 +12,35 @@ local ENEMY_TYPES = { "unit", "unit-spawner", "turret" }
 local AUTO_SMELT_RADIUS = 256
 local AUTO_SMELT_BATCH = 50
 local smelting_categories_by_item
+local WORK_ORDER = { "repair", "refuel", "turret", "smelt", "patrol", "mine" }
+local DEFAULT_PRIORITY = { repair = 1, refuel = 2, turret = 3, smelt = 4, patrol = 4, mine = 4 }
+
+local function priority(name, work)
+  local saved = storage.work_priorities and storage.work_priorities[name]
+  local value = saved and saved[work]
+  if value == nil then value = DEFAULT_PRIORITY[work] end
+  return math.max(0, math.min(4, math.floor(tonumber(value) or 0)))
+end
+
+local function ordered_work(name)
+  local out = {}
+  -- Rotate equal-priority jobs so an always-available patrol does not starve
+  -- mining (or another job) forever. Different companions start at different
+  -- offsets, which also encourages useful division of labour.
+  local name_offset = 0
+  for i = 1, #name do name_offset = name_offset + string.byte(name, i) end
+  local rotation = (math.floor(game.tick / 600) + name_offset) % #WORK_ORDER
+  for order, work in ipairs(WORK_ORDER) do
+    local value = priority(name, work)
+    if value > 0 then
+      out[#out + 1] = { key = work, priority = value, order = (order + rotation) % #WORK_ORDER }
+    end
+  end
+  table.sort(out, function(a, b)
+    return a.priority < b.priority or (a.priority == b.priority and a.order < b.order)
+  end)
+  return out
+end
 
 local function smelting_items()
   if smelting_categories_by_item then return smelting_categories_by_item end
@@ -149,39 +178,34 @@ function M.update()
         local enemy = nearby_enemy(c)
         if enemy and equipment.auto_arm(c) then
           task = { type = "fight", target = { x = c.position.x, y = c.position.y }, radius = 30 }
-        elseif assigned.repair < 2 and repair.has_work(c, 256) then
-          task = { type = "keep_repaired", radius = 256, max_empty_scans = 1 }
-          assigned.repair = assigned.repair + 1
-        elseif assigned.refuel < 2 and refuel.has_work(c, 256, storage.autonomy_fuel_target or 10) then
-          task = {
-            type = "keep_fueled", radius = 256,
-            top_up_count = storage.autonomy_fuel_target or 10,
-            max_empty_scans = 1,
-          }
-          assigned.refuel = assigned.refuel + 1
-        elseif assigned.turret < 2 then
-          task = turret_supply.find_task(c, 256, storage.autonomy_turret_ammo_target or 10)
-          if task then assigned.turret = assigned.turret + 1 end
-        elseif assigned.smelt < 2 then
-          task = autonomous_smelting_task(c)
-          if task then assigned.smelt = assigned.smelt + 1 end
-        end
-        if not task and assigned.patrol < 2 then
-          task = { type = "patrol", radius = 12, rounds = 1 }
-          assigned.patrol = assigned.patrol + 1
-        elseif not task and assigned.mine < 2 then
-          local target = random_minable(c)
-          if target then
-            if target.type == "resource" then
-              task = { type = "mine", resource = target.name, count = 20 }
-            else
-              task = { type = "mine", target = { x = target.position.x, y = target.position.y } }
+        else
+          for _, work in ipairs(ordered_work(name)) do
+            if work.key == "repair" and assigned.repair < 2 and repair.has_work(c, 256) then
+              task = { type = "keep_repaired", radius = 256, max_empty_scans = 1 }
+            elseif work.key == "refuel" and assigned.refuel < 2
+                and refuel.has_work(c, 256, storage.autonomy_fuel_target or 10) then
+              task = { type = "keep_fueled", radius = 256,
+                top_up_count = storage.autonomy_fuel_target or 10, max_empty_scans = 1 }
+            elseif work.key == "turret" and assigned.turret < 2 then
+              task = turret_supply.find_task(c, 256, storage.autonomy_turret_ammo_target or 10)
+            elseif work.key == "smelt" and assigned.smelt < 2 then
+              task = autonomous_smelting_task(c)
+            elseif work.key == "patrol" and assigned.patrol < 2 then
+              task = { type = "patrol", radius = 12, rounds = 1 }
+            elseif work.key == "mine" and assigned.mine < 2 then
+              local target = random_minable(c)
+              if target then
+                task = target.type == "resource"
+                  and { type = "mine", resource = target.name, count = 20 }
+                  or { type = "mine", target = { x = target.position.x, y = target.position.y } }
+              end
             end
-            assigned.mine = assigned.mine + 1
+            if task then
+              assigned[work.key] = assigned[work.key] + 1
+              break
+            end
           end
         end
-        -- Mining is deliberately the lowest-priority useful idle job. It is
-        -- considered only after combat, repairs, refueling, and patrol.
         task = task or wander_task(c)
         if task then
           tasks.enqueue({ task = task, replace = false, background = true, quiet = true })

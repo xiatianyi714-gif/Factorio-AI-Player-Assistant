@@ -96,6 +96,7 @@ local function make_gui(player)
   supply.add({ type = "button", name = PREFIX .. "equip", caption = T("装备现有武器", "Equip weapons") })
   supply.add({ type = "button", name = PREFIX .. "refuel", caption = T("补齐燃料", "Refuel machines") })
   supply.add({ type = "button", name = PREFIX .. "repair", caption = T("主动维修", "Repair machines") })
+  supply.add({ type = "button", name = PREFIX .. "priorities", caption = T("工作优先级", "Work priorities") })
   supply.add({ type = "label", caption = T("维修包可从设备附近己方箱子获取", "Repair packs may be collected from friendly chests near a machine") })
   supply.add({ type = "label", caption = T("设备燃料目标数量", "Target fuel count") })
   supply.add({ type = "textfield", name = PREFIX .. "fuel_count", text = tostring(storage.autonomy_fuel_target or 10), numeric = true, allow_decimal = false, allow_negative = false })
@@ -431,6 +432,51 @@ local function order_all(player, make_task)
   companion.set_context(nil)
 end
 
+local WORK_TYPES = {
+  { key = "repair", zh = "维修", en = "Repair", default = 1 },
+  { key = "refuel", zh = "补燃料", en = "Refuel", default = 2 },
+  { key = "turret", zh = "炮塔补弹", en = "Turret ammo", default = 3 },
+  { key = "smelt", zh = "生产投料", en = "Production", default = 4 },
+  { key = "patrol", zh = "巡逻", en = "Patrol", default = 4 },
+  { key = "mine", zh = "采矿", en = "Mining", default = 4 },
+}
+
+local function close_priorities(player)
+  local frame = player.gui.screen[PREFIX .. "priorities_frame"]
+  if frame and frame.valid then frame.destroy() end
+end
+
+local function open_priorities(player)
+  close_priorities(player)
+  storage.work_priorities = storage.work_priorities or {}
+  storage.local_gui[player.index] = storage.local_gui[player.index] or {}
+  local names = companion.names()
+  storage.local_gui[player.index].priority_names = names
+  local frame = player.gui.screen.add({
+    type = "frame", name = PREFIX .. "priorities_frame",
+    caption = T("助手工作优先级", "Companion Work Priorities"), direction = "vertical",
+  })
+  frame.auto_center = true
+  frame.add({ type = "label", caption = T("1 最高，4 最低；关闭表示不主动执行。战斗自卫始终优先。", "1 is highest and 4 lowest; Off disables autonomous work. Self-defense always takes priority.") })
+  local grid = frame.add({ type = "table", column_count = #WORK_TYPES + 1 })
+  grid.add({ type = "label", caption = T("助手", "Companion") })
+  for _, work in ipairs(WORK_TYPES) do grid.add({ type = "label", caption = T(work.zh, work.en) }) end
+  local items = { T("关闭", "Off"), "1", "2", "3", "4" }
+  for index, who in ipairs(names) do
+    grid.add({ type = "label", caption = who })
+    local saved = storage.work_priorities[who] or {}
+    for _, work in ipairs(WORK_TYPES) do
+      local value = saved[work.key]
+      if value == nil then value = work.default end
+      grid.add({
+        type = "drop-down", name = PREFIX .. "priority_" .. index .. "_" .. work.key,
+        items = items, selected_index = value == 0 and 1 or value + 1,
+      })
+    end
+  end
+  frame.add({ type = "button", name = PREFIX .. "priorities_close", caption = T("完成", "Done") })
+end
+
 local function start_custom_patrol(player)
   local state = storage.local_gui[player.index]
   local pending = state and state.pending_patrol
@@ -672,7 +718,20 @@ end
 function M.on_gui_selection_changed(event)
   local player = game.get_player(event.player_index)
   local element = event.element
-  if not player or not element or not element.valid or element.name ~= PREFIX .. "target" then return end
+  if not player or not element or not element.valid then return end
+  local priority_index, priority_key = string.match(element.name, "^" .. PREFIX .. "priority_(%d+)_(%a+)$")
+  if priority_index then
+    local state = storage.local_gui[player.index]
+    local who = state and state.priority_names and state.priority_names[tonumber(priority_index)]
+    if who then
+      storage.work_priorities = storage.work_priorities or {}
+      storage.work_priorities[who] = storage.work_priorities[who] or {}
+      storage.work_priorities[who][priority_key] = element.selected_index - 1
+      status(player, who .. T(" 的工作优先级已更新", " work priorities updated"))
+    end
+    return
+  end
+  if element.name ~= PREFIX .. "target" then return end
   storage.local_gui[player.index] = storage.local_gui[player.index] or {}
   local selected = element.get_item(element.selected_index)
   storage.local_gui[player.index].command_target = element.selected_index > 1 and selected or nil
@@ -712,6 +771,15 @@ function M.on_gui_click(event)
       online.gui.left[PREFIX .. "panel"].visible = was_visible ~= false
     end
     status(player, T("界面和内置蓝图已切换为中文", "Interface and built-in blueprints switched to English"))
+    return
+  end
+  if name == PREFIX .. "priorities" then
+    open_priorities(player)
+    return
+  end
+  if name == PREFIX .. "priorities_close" then
+    close_priorities(player)
+    status(player, T("工作优先级已保存", "Work priorities saved"))
     return
   end
   if name == PREFIX .. "toggle" then

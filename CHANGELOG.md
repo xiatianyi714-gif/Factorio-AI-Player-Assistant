@@ -1,5 +1,19 @@
 # 更新日志 / Changelog
 
+## 0.9.19
+
+### 中文
+
+- 新增“工作优先级”面板，可为每个助手分别设置维修、补燃料、炮塔补弹、生产投料、巡逻和采矿为 1–4 级或关闭。
+- 待机助手按个人优先级寻找工作；同级工作定期轮换，避免巡逻等持续可用的工作让其他工作永远无法执行。
+- 战斗自卫保持紧急优先，不受普通工作设置影响；玩家手动下达的命令也不受影响。
+
+### English
+
+- Added a Work Priorities panel with per-companion levels 1–4 or Off for repair, refueling, turret supply, production input, patrol and mining.
+- Idle companions choose work by their individual settings; equal-priority jobs rotate to prevent an always-available job from starving the rest.
+- Combat self-defense remains an emergency override, and explicit player orders are unaffected.
+
 ## 0.9.18 — 按损伤取维修包 / Damage-Based Repair Pack Collection
 
 - 助手不再从箱子固定取最多 10 个维修包，而是根据当前受损设备缺失的生命值和每包实际维修量计算本次所需数量。
