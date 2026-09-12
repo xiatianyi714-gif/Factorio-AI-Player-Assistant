@@ -467,7 +467,12 @@ local function refresh_assistant_status(player)
   for _, who in ipairs(companion.names()) do
     local c = companion.get(who)
     local active = tasks.active_summary(who)
-    local health = c and math.floor(100 * (c.health or 0) / math.max(c.prototype.max_health or 1, 1)) or 0
+    local current_health, max_health = 0, 1
+    if c then
+      pcall(function() current_health = c.health or 0 end)
+      pcall(function() max_health = c.max_health or 250 end)
+    end
+    local health = c and math.floor(100 * current_health / math.max(max_health, 1)) or 0
     local items = c and c.get_main_inventory().get_item_count() or 0
     local work = active and task_name(active.type) or T("待机", "Idle")
     if active and active.resume_type then
@@ -846,7 +851,7 @@ function M.on_gui_click(event)
   if name == PREFIX .. "toggle" then
     local panel = player.gui.left[PREFIX .. "panel"]
     panel.visible = not panel.visible
-    if panel.visible then refresh_assistant_status(player) end
+    if panel.visible then pcall(refresh_assistant_status, player) end
     return
   end
   if name == PREFIX .. "bp_close" then
@@ -1385,7 +1390,10 @@ end
 
 function M.on_tick()
   if game.tick % 60 == 0 then
-    for _, player in pairs(game.connected_players) do refresh_assistant_status(player) end
+    -- A diagnostic widget must never be able to stop the simulation. Keep the
+    -- per-player refresh isolated in case another API or third-party prototype
+    -- exposes unusual data.
+    for _, player in pairs(game.connected_players) do pcall(refresh_assistant_status, player) end
   end
   for player_index, state in pairs(storage.local_gui or {}) do
     if state.native_blueprint_queue_tick and game.tick >= state.native_blueprint_queue_tick then

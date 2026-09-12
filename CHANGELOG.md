@@ -1,5 +1,17 @@
 # 更新日志 / Changelog
 
+## 0.10.1
+
+### 中文
+
+- 修复实时状态面板错误读取 Factorio 2.0 中不存在的 `LuaEntityPrototype.max_health`，导致 `on_tick` 崩溃的问题。
+- 改为安全读取助手实体自身的最大生命值，并为实时诊断刷新增加隔离保护，面板异常不再中断游戏。
+
+### English
+
+- Fixed an `on_tick` crash caused by the live status panel reading the unavailable `LuaEntityPrototype.max_health` field in Factorio 2.0.
+- Maximum health is now read safely from the companion entity, and diagnostic refreshes are isolated so a UI issue cannot stop the simulation.
+
 ## 0.10.0
 
 ### 中文
