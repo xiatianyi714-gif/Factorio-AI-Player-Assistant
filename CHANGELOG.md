@@ -1,5 +1,19 @@
 # 更新日志 / Changelog
 
+## 0.9.21
+
+### 中文
+
+- 巡逻助手现在会定期检查路线附近 64 格内的己方弹药炮塔。
+- 炮塔低于面板设置的目标弹药数量时，助手会使用背包中的兼容弹药，或从附近己方箱子取得真实弹药后装填。
+- 完成一次炮塔补弹后，助手会返回当前巡逻路线点并继续按保存顺序巡逻；遇敌仍优先战斗。
+
+### English
+
+- Patrolling companions now periodically inspect friendly ammo turrets within 64 tiles of their route.
+- When a turret is below the configured target, companions use compatible carried ammunition or collect real ammunition from a nearby friendly chest.
+- After servicing a turret, the companion resumes the current ordered patrol waypoint; combat still takes priority.
+
 ## 0.9.20
 
 ### 中文

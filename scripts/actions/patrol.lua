@@ -2,10 +2,13 @@ local companion = require("scripts.companion")
 local equipment = require("scripts.equipment")
 local walk = require("scripts.actions.walk")
 local approach = require("scripts.actions.approach")
+local turret_supply = require("scripts.actions.turret_supply")
 
 local M = {}
 local ENEMY_TYPES = { "unit", "unit-spawner", "turret" }
 local DETECTION_RADIUS = 30
+local TURRET_SERVICE_RADIUS = 64
+local TURRET_SCAN_TICKS = 120
 
 local function stop_shooting(c)
   pcall(function() c.shooting_state = { state = defines.shooting.not_shooting } end)
@@ -65,7 +68,7 @@ function M.start(task)
       points[#points + 1] = safe_point(c, { x = x + math.cos(angle) * r, y = y + math.sin(angle) * r })
     end
   end
-  task._patrol = { points = points, index = 1, walk = {}, legs = 0 }
+  task._patrol = { points = points, index = 1, walk = {}, legs = 0, next_turret_scan = 0 }
   walk.begin(task._patrol.walk, c, points[1], 1.5)
 end
 
@@ -76,6 +79,7 @@ function M.tick(task)
   if task._resume_after_combat then
     task._resume_after_combat = nil
     p.enemy, p.combat_walk, p.arm_supply = nil, nil, nil
+    if p.turret_service then p.turret_service._approach = nil end
     p.walk = {}
     walk.begin(p.walk, c, p.points[p.index], 1.5)
   end
@@ -160,9 +164,36 @@ function M.tick(task)
     -- patrol point with a fresh path; never advance merely because combat ended.
     p.was_fighting = nil
     p.combat_goal = nil
+    if p.turret_service then p.turret_service._approach = nil end
     p.walk = {}
     walk.begin(p.walk, c, p.points[p.index], 1.5)
   end
+
+  -- Patrol duty includes nearby turret logistics. This is a short detour:
+  -- collect real compatible ammunition from the helper inventory or a
+  -- friendly chest, fill one turret, then resume the exact current route leg.
+  if not p.turret_service and game.tick >= (p.next_turret_scan or 0) then
+    p.next_turret_scan = game.tick + TURRET_SCAN_TICKS
+    local supply = turret_supply.find_task(c, TURRET_SERVICE_RADIUS,
+      storage.autonomy_turret_ammo_target or 10)
+    if supply then
+      supply.id = task.id
+      supply.material_search_radius = 256
+      turret_supply.start(supply)
+      p.turret_service = supply
+    end
+  end
+  if p.turret_service then
+    local service_result = turret_supply.tick(p.turret_service)
+    if service_result then
+      p.turret_service = nil
+      task._path_result = nil
+      p.walk = {}
+      walk.begin(p.walk, c, p.points[p.index], 1.5)
+    end
+    return nil
+  end
+
   local result = walk.step(p.walk, c, task.id)
   if result == "arrived" then
     p.legs = p.legs + 1
