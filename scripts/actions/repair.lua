@@ -5,6 +5,7 @@ local companion = require("scripts.companion")
 local approach = require("scripts.actions.approach")
 local chat = require("scripts.chat")
 local events = require("scripts.events")
+local reservations = require("scripts.reservations")
 
 local M = {}
 
@@ -80,6 +81,11 @@ function M.tick(task)
 
   local target = state.target
   if target and target.valid and needs_repair(target, c.force) then
+    if not reservations.claim(target, companion.context(), task.id) then
+      state.target, state.supply = nil, nil
+      task._approach = nil
+      return nil
+    end
     if c.get_item_count("repair-pack") == 0 then
       local box = state.supply
       if not (box and box.valid) then
@@ -120,6 +126,7 @@ function M.tick(task)
         pcall(events.push, "supply_warning", text)
       end
       state.target = nil
+      reservations.release(target, task.id)
       state.next_scan = game.tick + SCAN_INTERVAL_TICKS
       return nil
     end
@@ -127,6 +134,7 @@ function M.tick(task)
     local reached = approach.ensure(task, c, target.position, c.reach_distance)
     if type(reached) == "table" then
       if target.unit_number then state.unreachable[target.unit_number] = game.tick + 3600 end
+      reservations.release(target, task.id)
       state.target = nil
       task._approach = nil
       return nil
@@ -136,6 +144,7 @@ function M.tick(task)
     state.warned_empty = false
     local hp, max = health_values(target)
     if not hp or not max or hp >= max then
+      reservations.release(target, task.id)
       state.target = nil
       task._approach = nil
       return nil
@@ -148,11 +157,13 @@ function M.tick(task)
     end
     if target.health >= max then
       state.repaired = state.repaired + 1
+      reservations.release(target, task.id)
       state.target = nil
       task._approach = nil
     end
     return nil
   end
+  if target and target.valid then reservations.release(target, task.id) end
   state.target, state.supply = nil, nil
 
   if game.tick < state.next_scan then
@@ -168,13 +179,15 @@ function M.tick(task)
     force = c.force,
   })) do
     local blocked_until = entity.unit_number and state.unreachable[entity.unit_number]
-    if needs_repair(entity, c.force) and (not blocked_until or game.tick >= blocked_until) then
+    if needs_repair(entity, c.force) and (not blocked_until or game.tick >= blocked_until)
+        and reservations.available(entity, companion.context(), task.id) then
       local d = dist_sq(entity.position, c.position)
       if not best or d < best_d then best, best_d = entity, d end
     end
   end
   state.target = best
   if best then
+    reservations.claim(best, companion.context(), task.id)
     state.empty_scans = 0
   elseif task.max_empty_scans then
     state.empty_scans = state.empty_scans + 1

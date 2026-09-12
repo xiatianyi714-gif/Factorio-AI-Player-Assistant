@@ -1,5 +1,7 @@
 # 异星工厂 AI 玩家助手 / Factorio AI Player Assistant
 
+> 当前版本 / Current version: 0.13.0 — 多助手共享目标调度，自动错开维修、补燃料、炮塔补弹和采矿目标。
+
 一个完全在 Factorio 2.0 游戏内运行的多助手模组，不需要外部 AI、API、Codex 或 Token。助手像真实角色一样移动、采矿、搬运、建造和战斗，所有物品都来自实际背包、箱子或采集行为。
 
 A multi-companion mod that runs entirely inside Factorio 2.0. It requires no external AI, API, Codex, or tokens. Companions physically move, mine, transport, build, and fight, and every item must come from a real inventory, chest, or mining action.

@@ -15,6 +15,7 @@ local drive = require("scripts.actions.drive")
 local build_plan = require("scripts.actions.build_plan")
 local deconstruct = require("scripts.actions.deconstruct")
 local fight = require("scripts.actions.fight")
+local reservations = require("scripts.reservations")
 
 local M = {}
 
@@ -87,6 +88,7 @@ end
 
 -- finish() runs with the companion context already set to the task's owner.
 local function finish(task, status, detail)
+  reservations.release_task(task.id)
   storage.tasks.records[task.id] = {
     status = status,
     detail = detail or "",
@@ -134,6 +136,7 @@ local function finish(task, status, detail)
     local kept = {}
     for _, q in ipairs(l2.queue) do
       if q.chain == task.chain then
+        reservations.release_task(q.id)
         storage.tasks.records[q.id] = {
           status = "cancelled",
           detail = "skipped: an earlier step of the same plan failed",
@@ -172,6 +175,7 @@ local function cancel_lane(name)
   l.suspended = nil
   local n = 0
   for _, q in ipairs(l.queue) do
+    reservations.release_task(q.id)
     storage.tasks.records[q.id] = { status = "cancelled", detail = "", finished_tick = game.tick }
     n = n + 1
   end
@@ -203,7 +207,6 @@ function M.enqueue(params)
   task.background = params.background == true
   task.quiet = params.quiet == true
   if params.chain ~= nil then task.chain = tostring(params.chain) end
-
   -- Late arrival of an already-failed plan: cancel silently right here (the
   -- failure that killed the chain already produced its one event).
   local fc = storage.tasks.failed_chains
@@ -212,6 +215,13 @@ function M.enqueue(params)
       status = "cancelled",
       detail = "skipped: an earlier step of the same plan failed",
       finished_tick = game.tick,
+    }
+    return { task_id = task.id, companion = name, cancelled = true }
+  end
+
+  if task.reservation_key and not reservations.claim_key(task.reservation_key, name, task.id) then
+    t.records[task.id] = {
+      status = "cancelled", detail = "target was reserved by another companion", finished_tick = game.tick,
     }
     return { task_id = task.id, companion = name, cancelled = true }
   end
@@ -262,6 +272,7 @@ function M.cancel(params)
       for i, q in ipairs(l.queue) do
         if q.id == id then
           table.remove(l.queue, i)
+          reservations.release_task(id)
           storage.tasks.records[id] = { status = "cancelled", detail = "", finished_tick = game.tick }
           n = 1
           break
@@ -321,6 +332,7 @@ function M.interrupt_for_combat(name, task)
 end
 
 local function prune_records()
+  reservations.cleanup()
   local t = storage.tasks
   for id, rec in pairs(t.records) do
     if game.tick - rec.finished_tick > RECORD_TTL_TICKS then

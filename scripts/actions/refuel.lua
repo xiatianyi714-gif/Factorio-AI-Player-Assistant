@@ -6,6 +6,7 @@ local approach = require("scripts.actions.approach")
 local chat = require("scripts.chat")
 local events = require("scripts.events")
 local mine = require("scripts.actions.mine")
+local reservations = require("scripts.reservations")
 
 local M = {}
 
@@ -182,10 +183,16 @@ function M.tick(task)
   -- Serve the current customer.
   local target = rf.target
   if target and target.valid then
+    if not reservations.claim(target, companion.context(), task.id) then
+      rf.target, rf.supply, rf.fuel_mine = nil, nil, nil
+      task._approach = nil
+      return nil
+    end
     local target_id = target.unit_number
     local fuel_left = burner_fuel_count(target)
     if fuel_left == nil or not needs_fuel(target, task) then
       if target_id then rf.serviced_this_round[target_id] = true end
+      reservations.release(target, task.id)
       rf.target = nil
       rf.supply = nil
       task._approach = nil
@@ -229,6 +236,7 @@ function M.tick(task)
         end
         if target.unit_number then rf.unserviceable[target.unit_number] = game.tick + 3600 end
         if target_id then rf.serviced_this_round[target_id] = true end
+        reservations.release(target, task.id)
         rf.target = nil
         return nil
       end
@@ -260,6 +268,7 @@ function M.tick(task)
     if type(reached) == "table" then
       -- Can't get there; skip it this round rather than killing the caretaker.
       if target_id then rf.serviced_this_round[target_id] = true end
+      reservations.release(target, task.id)
       rf.target = nil
       task._approach = nil
       return nil
@@ -276,11 +285,13 @@ function M.tick(task)
       rf.topped_up = rf.topped_up + 1
     end
     if target_id then rf.serviced_this_round[target_id] = true end
+    reservations.release(target, task.id)
     rf.target = nil
     rf.supply = nil
     task._approach = nil
     return nil
   end
+  if target and target.valid then reservations.release(target, task.id) end
   rf.target = nil
   rf.supply = nil
 
@@ -304,7 +315,8 @@ function M.tick(task)
       local blocked_until = e.unit_number and rf.unserviceable[e.unit_number]
       local serviced = e.unit_number and rf.serviced_this_round[e.unit_number]
       if fuel_left ~= nil and needs_fuel(e, task)
-        and not serviced and (not blocked_until or game.tick >= blocked_until) then
+        and not serviced and (not blocked_until or game.tick >= blocked_until)
+        and reservations.available(e, companion.context(), task.id) then
         local d = dist_sq(e.position, c.position)
         local power = is_power_device(e)
         if not best or (power and not best_power) or (power == best_power and d < best_d) then
@@ -315,6 +327,7 @@ function M.tick(task)
   end
   rf.target = best
   if best then
+    reservations.claim(best, companion.context(), task.id)
     rf.empty_scans = 0
   elseif task.max_empty_scans then
     rf.empty_scans = rf.empty_scans + 1

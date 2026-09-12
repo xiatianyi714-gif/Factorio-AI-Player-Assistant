@@ -8,6 +8,7 @@
 -- inventory delta, not the return value.
 local companion = require("scripts.companion")
 local approach = require("scripts.actions.approach")
+local reservations = require("scripts.reservations")
 
 local M = {}
 
@@ -181,7 +182,8 @@ local function find_nearest_match(c, matcher, blocked, center, radius)
   local best, best_d
   for _, e in ipairs(candidates) do
     local id = e.unit_number or (e.name .. ":" .. e.position.x .. ":" .. e.position.y)
-    if e.valid and not (blocked and blocked[id]) and e.prototype.mineable_properties.minable then
+    if e.valid and not (blocked and blocked[id]) and e.prototype.mineable_properties.minable
+        and reservations.available(e, companion.context()) then
       local d = dist_sq(e.position, c.position)
       if not best or d < best_d then
         best, best_d = e, d
@@ -230,6 +232,7 @@ local function tick_composite(task, c)
   if not (e and e.valid) then
     e = find_nearest_match(c, m.matcher, m.blocked, task.search_center, task.search_radius)
     task._entity = e
+    if e then reservations.claim(e, companion.context(), task.id) end
     task._approach = nil
     m.remaining = nil
     if not e then
@@ -249,6 +252,13 @@ local function tick_composite(task, c)
     end
   end
 
+  if not reservations.claim(e, companion.context(), task.id) then
+    task._entity = nil
+    task._approach = nil
+    m.remaining = nil
+    return nil
+  end
+
   local reached = approach.ensure(task, c, e.position, c.resource_reach_distance)
   if type(reached) == "table" then return reached end
   if reached ~= "ok" then return nil end
@@ -258,6 +268,7 @@ local function tick_composite(task, c)
   if result.blocked then
     local id = e.unit_number or (e.name .. ":" .. e.position.x .. ":" .. e.position.y)
     m.blocked[id] = true
+    reservations.release(e, task.id)
     task._entity = nil
     task._approach = nil
     m.remaining = nil
@@ -273,6 +284,7 @@ local function tick_composite(task, c)
 
   m.ops = m.ops + 1
   if result.exhausted then
+    reservations.release(e, task.id)
     task._entity = nil -- find the next matching entity
   end
   if m.ops >= task.count then

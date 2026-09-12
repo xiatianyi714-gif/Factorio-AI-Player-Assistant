@@ -1,5 +1,21 @@
 # 更新日志 / Changelog
 
+## 0.13.0
+
+### 中文
+
+- 新增多人共享目标调度：维修、补燃料、炮塔补弹和自动采矿会短暂预留目标，避免多名助手同时奔向同一台设备或同一处矿点。
+- 目标预留会在完成、失败、取消、任务链中止或目标切换时立即释放；异常残留也会自动过期清理，不会永久卡住工作。
+- 长时间采矿和移动途中会持续续约目标；若目标已被另一名助手接手，会自动重新选择工作，而不是互相拥挤。
+- 保留个人职业优先级、固定工作区域及最多两人从事同类待机工作的规则，使多助手分工更稳定。
+
+### English
+
+- Added shared multi-companion target scheduling: repairs, refueling, turret ammunition and autonomous mining temporarily reserve their targets so helpers do not converge on the same machine or resource.
+- Reservations are released on completion, failure, cancellation, chain abort or target changes; stale claims also expire automatically and cannot permanently block work.
+- Long mining and travel continuously renew their claims. A helper automatically selects different work if another helper owns the target.
+- Personal role priorities, fixed work areas and the two-helper idle-category limit remain in effect for more stable division of labor.
+
 ## 0.12.0
 
 ### 中文

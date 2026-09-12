@@ -3,6 +3,7 @@
 local companion = require("scripts.companion")
 local approach = require("scripts.actions.approach")
 local material_supply = require("scripts.actions.material_supply")
+local reservations = require("scripts.reservations")
 
 local M = {}
 local DEFAULT_RADIUS = 256
@@ -55,7 +56,8 @@ function M.find_task(c, radius, target_count, center)
   for _, turret in ipairs(c.surface.find_entities_filtered({
     position = center or c.position, radius = radius, force = c.force, type = "ammo-turret",
   })) do
-    if turret.valid and turret_count(turret) < target_count then
+    if turret.valid and turret_count(turret) < target_count
+        and reservations.available(turret, companion.context()) then
       local item = carried_ammo(c, turret) or stored_ammo(c, turret, radius)
       if item then
         local dx, dy = turret.position.x - c.position.x, turret.position.y - c.position.y
@@ -73,6 +75,7 @@ function M.find_task(c, radius, target_count, center)
     ammo = best_item,
     target_count = target_count,
     search_radius = radius,
+    reservation_key = reservations.key(best),
   }
 end
 
@@ -89,6 +92,9 @@ function M.tick(task)
   local turret = task.turret
   if not c then return { status = "failed", detail = "助手已不存在" } end
   if not (turret and turret.valid) then return { status = "failed", detail = "炮塔已不存在" } end
+  if not reservations.claim(turret, companion.context(), task.id) then
+    return { status = "done", detail = "另一名助手已接手该炮塔" }
+  end
   local current = turret_count(turret)
   if current >= task.target_count then return { status = "done", detail = "炮塔弹药已经充足" } end
 
