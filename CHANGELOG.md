@@ -1,5 +1,19 @@
 # 更新日志 / Changelog
 
+## 0.9.12 — 复活后取回死亡物品 / Post-Respawn Item Recovery
+
+- 助手复活后会自动返回自己的死亡地点，从附近尸体或地面取回死亡时携带的物品，然后恢复正常待机。
+- After respawning, a companion automatically returns to its death location, retrieves the items it carried from the nearby corpse or ground, and resumes normal idle behavior.
+
+- 死亡时会记录物品名称和数量，只回收本次死亡清单中的物品，避免误拿死亡地点附近的其他掉落物；不会复制物品。
+- Item names and quantities are recorded at death, so only items in that death manifest are recovered, avoiding unrelated nearby drops and preventing duplication.
+
+- 如果死亡物品已被玩家取走、无法到达或新背包空间不足，助手会保留已取回的部分并结束回收任务。
+- If items were already taken, are unreachable, or do not fit in the new inventory, the companion keeps what it recovered and ends the recovery task.
+
+- 补燃料时优先处理锅炉、燃烧发电机和核反应堆等发电设备，并尽量把发电设备的燃料库存填满；普通设备仍使用面板设置的目标数量。
+- Refueling now prioritizes power equipment such as boilers, burner generators, and reactors, filling their fuel inventories as far as possible while ordinary machines continue using the configured target amount.
+
 ## 0.9.11 — 待机自动熔炼与助手复活 / Autonomous Smelting and Companion Respawn
 
 - 待机助手背包里有可熔炼矿物时，会主动寻找 256 格内能够接收该矿物的己方熔炉，亲自走到旁边投入，每次最多投入 50 个。

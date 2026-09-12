@@ -90,8 +90,23 @@ function M.schedule_respawn(entity)
   if not entity then return nil end
   for name, rec in pairs(records()) do
     if rec.entity == entity or (rec.unit_number and rec.unit_number == entity.unit_number) then
+      local death_items = {}
+      for _, inventory_id in ipairs({
+        defines.inventory.character_main,
+        defines.inventory.character_guns,
+        defines.inventory.character_ammo,
+        defines.inventory.character_armor,
+      }) do
+        local inv = entity.get_inventory(inventory_id)
+        if inv then
+          for _, item in ipairs(inv.get_contents()) do
+            death_items[item.name] = (death_items[item.name] or 0) + item.count
+          end
+        end
+      end
       rec.death_position = { x = entity.position.x, y = entity.position.y }
       rec.death_surface_index = entity.surface.index
+      rec.death_items = death_items
       rec.respawn_tick = game.tick + RESPAWN_DELAY_TICKS
       rec.entity = nil
       pcall(function() if rec.label and rec.label.valid then rec.label.destroy() end end)
@@ -104,15 +119,29 @@ function M.schedule_respawn(entity)
 end
 
 function M.process_respawns()
+  local respawned = {}
   for name, rec in pairs(records()) do
     if rec.respawn_tick and game.tick >= rec.respawn_tick and not M.get(name) then
       local player = game.connected_players[1]
       local params = { name = name }
       if player then params.near_player = player.name end
+      local death_position = rec.death_position
+      local death_surface_index = rec.death_surface_index
+      local death_items = rec.death_items
       local ok = pcall(M.spawn, params)
-      if not ok then rec.respawn_tick = game.tick + 60 end
+      if not ok then
+        rec.respawn_tick = game.tick + 60
+      else
+        respawned[#respawned + 1] = {
+          name = name,
+          position = death_position,
+          surface_index = death_surface_index,
+          items = death_items,
+        }
+      end
     end
   end
+  return respawned
 end
 
 local function spill_inventory(ent, inventory_id)
@@ -306,6 +335,7 @@ function M.spawn(params)
   rec.respawn_tick = nil
   rec.death_position = nil
   rec.death_surface_index = nil
+  rec.death_items = nil
   ent.color = color_for(name)
   apply_speed_to(ent)
   if name == M.DEFAULT then

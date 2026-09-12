@@ -17,11 +17,14 @@ This enhanced edition continues development from the mod code in Agentic-Factori
 - 最多生成四名助手，可向全部助手或单个助手下达命令。
 - Spawn up to four companions and command all of them or an individual companion.
 
-- 助手死亡后等待 10 秒在玩家附近复活，死亡物品不会复制。
-- Companions respawn near the player after 10 seconds, without duplicating their death inventory.
+- 助手死亡后等待 10 秒在玩家附近复活，再自动返回死亡地点取回自己的遗留物品；死亡物品不会复制。
+- Companions respawn near the player after 10 seconds, then automatically return to recover their own death items without duplication.
 
 - 待机时会把背包或附近己方箱子中的可熔炼矿物送入兼容熔炉，所有取料和投料都由助手亲自完成。
 - While idle, companions deliver smeltable materials from their inventories or nearby friendly chests to compatible furnaces, physically performing every pickup and delivery.
+
+- 补燃料优先保障发电设备并尽量填满其燃料库存，之后再按设定数量补充普通设备。
+- Refueling prioritizes power equipment and fills its fuel inventory whenever possible before servicing ordinary machines to the configured amount.
 
 - 跟随、原地镇守、巡逻、主动清理敌人和停止命令。
 - Follow, hold position, patrol, clear nearby enemies, and stop commands.

@@ -14,6 +14,7 @@ local MAX_RADIUS = 512
 local FUEL_CHEST_RADIUS = 96
 local SCAN_INTERVAL_TICKS = 180
 local TOP_UP_COUNT = 10
+local POWER_TYPES = { boiler = true, ["burner-generator"] = true, reactor = true }
 
 local function dist_sq(a, b)
   local dx, dy = a.x - b.x, a.y - b.y
@@ -83,6 +84,31 @@ local function burner_fuel_count(e)
   return n -- nil = not a (fueled) burner
 end
 
+local function is_power_device(e)
+  return e and POWER_TYPES[e.type] == true
+end
+
+local function fuel_inventory_full(e)
+  local full = true
+  pcall(function() full = e.burner.inventory.is_full() end)
+  return full
+end
+
+local function desired_fuel_count(task, e, item_name)
+  if not is_power_device(e) then return task.top_up_count end
+  local stack_size = (prototypes.item[item_name] and prototypes.item[item_name].stack_size) or task.top_up_count
+  local slots = 1
+  pcall(function() slots = #e.burner.inventory end)
+  return math.max(task.top_up_count, slots * stack_size)
+end
+
+local function needs_fuel(e, task)
+  local count = burner_fuel_count(e)
+  if count == nil then return false end
+  if is_power_device(e) then return not fuel_inventory_full(e) end
+  return count < task.top_up_count
+end
+
 function M.start(task)
   local c = companion.require_companion()
   local anchor = (task.center and type(task.center.x) == "number") and task.center or c.position
@@ -129,7 +155,7 @@ function M.tick(task)
   local target = rf.target
   if target and target.valid then
     local fuel_left = burner_fuel_count(target)
-    if fuel_left == nil or fuel_left >= task.top_up_count then
+    if fuel_left == nil or not needs_fuel(target, task) then
       rf.target = nil
       rf.supply = nil
       task._approach = nil
@@ -154,7 +180,11 @@ function M.tick(task)
         local can_mine_coal = prototypes.entity["coal"]
           and compatible_fuel("coal", target.burner, task.fuel)
         if can_mine_coal then
-          local child = { id = task.id, resource = "coal", count = task.top_up_count }
+          local child = {
+            id = task.id,
+            resource = "coal",
+            count = desired_fuel_count(task, target, "coal"),
+          }
           local ok = pcall(mine.start, child)
           if ok then
             rf.fuel_mine = child
@@ -181,7 +211,7 @@ function M.tick(task)
       if reached_supply ~= "ok" then return nil end
       local inv = supply.box.get_inventory(defines.inventory.chest)
       local available = inv and inv.get_item_count(supply.item) or 0
-      local needed = math.max(0, task.top_up_count - fuel_left)
+      local needed = math.max(0, desired_fuel_count(task, target, supply.item) - fuel_left)
       local n = math.min(available, needed)
       local inserted = 0
       if n > 0 then inserted = c.get_main_inventory().insert({ name = supply.item, count = n }) end
@@ -201,7 +231,7 @@ function M.tick(task)
     if reached ~= "ok" then return nil end
 
     rf.warned_empty = false
-    local needed = math.max(0, task.top_up_count - fuel_left)
+    local needed = math.max(0, desired_fuel_count(task, target, fuel) - fuel_left)
     local n = math.min(c.get_item_count(fuel), needed)
     local inserted = 0
     pcall(function() inserted = target.burner.inventory.insert({ name = fuel, count = n }) end)
@@ -224,7 +254,7 @@ function M.tick(task)
   end
   rf.next_scan = game.tick + SCAN_INTERVAL_TICKS
 
-  local best, best_d
+  local best, best_d, best_power
   for _, e in ipairs(c.surface.find_entities_filtered({
     -- Search from the helper's current position so the caretaker can keep
     -- discovering new machines as it travels through the factory.
@@ -235,11 +265,12 @@ function M.tick(task)
     if e.valid and e.type ~= "character" then
       local fuel_left = burner_fuel_count(e)
       local blocked_until = e.unit_number and rf.unserviceable[e.unit_number]
-      if fuel_left ~= nil and fuel_left < task.top_up_count
+      if fuel_left ~= nil and needs_fuel(e, task)
         and (not blocked_until or game.tick >= blocked_until) then
         local d = dist_sq(e.position, c.position)
-        if not best or d < best_d then
-          best, best_d = e, d
+        local power = is_power_device(e)
+        if not best or (power and not best_power) or (power == best_power and d < best_d) then
+          best, best_d, best_power = e, d, power
         end
       end
     end
@@ -261,14 +292,14 @@ end
 function M.has_work(c, radius, desired_count)
   radius = math.max(5, math.min(tonumber(radius) or DEFAULT_RADIUS, MAX_RADIUS))
   desired_count = math.max(1, math.min(math.floor(tonumber(desired_count) or TOP_UP_COUNT), 1000))
+  local probe = { top_up_count = desired_count }
   for _, e in ipairs(c.surface.find_entities_filtered({
     position = c.position,
     radius = radius,
     force = c.force,
   })) do
     if e.valid and e.type ~= "character" then
-      local fuel_left = burner_fuel_count(e)
-      if fuel_left ~= nil and fuel_left < desired_count then return true end
+      if needs_fuel(e, probe) then return true end
     end
   end
   return false

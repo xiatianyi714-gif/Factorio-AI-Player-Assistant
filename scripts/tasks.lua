@@ -46,6 +46,7 @@ local runners = {
   mine_supply = require("scripts.actions.mine_supply"),
   output_sort = require("scripts.actions.output_sort"),
   production_chain = require("scripts.actions.production_chain"),
+  recover_death_items = require("scripts.actions.recover_death_items"),
 }
 
 -- One lane (queue + active) per companion; tasks in different lanes run in

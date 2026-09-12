@@ -86,7 +86,23 @@ script.on_nth_tick(120, function()
 end)
 script.on_nth_tick(300, idle.update)
 script.on_event(defines.events.on_tick, function()
-  companion.process_respawns()
+  for _, recovery in ipairs(companion.process_respawns()) do
+    if recovery.position and next(recovery.items or {}) then
+      companion.set_context(recovery.name)
+      tasks.enqueue({
+        task = {
+          type = "recover_death_items",
+          target = recovery.position,
+          surface_index = recovery.surface_index,
+          items = recovery.items,
+        },
+        replace = true,
+        background = true,
+        quiet = true,
+      })
+    end
+  end
+  companion.set_context(nil)
   tasks.on_tick()
   local_gui.on_tick()
 end)
